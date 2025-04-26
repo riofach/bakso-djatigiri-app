@@ -5,3 +5,4 @@ Isi nick = nama
 - riofach = Fachrio Raditya
 - WahyuArliansyah = Wahyu Arliansyah ganteng
 - gusnaldi99 = Gusnaldi Luthfi
+- fandifdlh = fandi fadillah
