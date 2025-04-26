@@ -1,2 +1,2 @@
 Isi nick  = nama 
-- ariebhewhe = Ary Budi Warsito 
+- ariebhewhe = Ary Budi Warsito
