@@ -1,5 +1,5 @@
-- Isi nick = nama
-  contoh
+Isi nick = nama
 
-* ariebhewhe = Ary Budi Warsito
-* riofach = Fachrio Raditya
+- ariebhewhe = Ary Budi Warsito
+- Rizz404 = Rizqiansyah Ramadhan
+- riofach = Fachrio Raditya
