@@ -4,3 +4,4 @@ Isi nick = nama
 - Rizz404 = Rizqiansyah Ramadhan
 - riofach = Fachrio Raditya
 - WahyuArliansyah = Wahyu Arliansyah
+- gusnaldi99 = Gusnaldi Luthfi
