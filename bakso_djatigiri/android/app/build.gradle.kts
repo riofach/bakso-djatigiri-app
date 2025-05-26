@@ -19,7 +19,7 @@ dependencies {
 }
 
 android {
-    namespace = "com.miebakso.miebakso.mie_bakso_djatigiri"
+    namespace = "com.miebakso.miebakso.bakso_djatigiri"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
