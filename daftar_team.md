@@ -1,4 +1,4 @@
-Team 404
+Team 404 - Bakso Djatigiri
 
 1. Fachrio Raditya (1122140093) = riofach
 2. Muhammad Juan Adi Pratama (1122140109) = MJuanAdiPratama
