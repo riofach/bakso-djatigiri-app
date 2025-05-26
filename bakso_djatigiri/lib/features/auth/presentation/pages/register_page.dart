@@ -1,0 +1,145 @@
+// Halaman Register Sederhana
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../bloc/auth_bloc.dart';
+import '../widgets/auth_text_field.dart';
+
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Register'),
+        automaticallyImplyLeading: false,
+      ),
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) async {
+          if (state is AuthLoading) {
+            // Komentar: Tidak perlu aksi khusus saat loading
+          } else if (state is Authenticated) {
+            // Komentar: Simpan status login ke shared_preferences
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('is_logged_in', true);
+            // Komentar: Tampilkan snackbar sukses dan redirect ke home
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Registrasi berhasil!')),
+            );
+            // Komentar: Redirect ke Home dan hapus semua route sebelumnya
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          } else if (state is AuthError) {
+            // Komentar: Tampilkan pesan error dari BLoC ke user
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          return Form(
+            key: _formKey,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AuthTextField(
+                    controller: _nameController,
+                    label: 'Nama',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Nama wajib diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  AuthTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email wajib diisi';
+                      }
+                      // Komentar: Memperbaiki regex validasi email agar sesuai standar umum
+                      if (!RegExp(
+                        r'^[^@\s]+@[^@\s]+\.[^@\s]+',
+                      ).hasMatch(value)) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  AuthTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password wajib diisi';
+                      }
+                      if (value.length < 6) {
+                        return 'Password minimal 6 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed:
+                          state is AuthLoading
+                              ? null
+                              : () {
+                                // Komentar: Validasi form sebelum submit
+                                if (_formKey.currentState!.validate()) {
+                                  context.read<AuthBloc>().add(
+                                    RegisterEvent(
+                                      _emailController.text.trim(),
+                                      _passwordController.text.trim(),
+                                      _nameController.text.trim(),
+                                    ),
+                                  );
+                                }
+                              },
+                      child:
+                          state is AuthLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text('Register'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    child: const Text('Sudah punya akun? Login'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
