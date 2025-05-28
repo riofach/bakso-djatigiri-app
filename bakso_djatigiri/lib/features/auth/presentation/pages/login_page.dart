@@ -37,6 +37,7 @@ class _LoginPageState extends State<LoginPage> {
             //   context,
             // ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
             Navigator.pushNamedAndRemoveUntil(
+              // ignore: use_build_context_synchronously
               context,
               '/home',
               (route) => false,

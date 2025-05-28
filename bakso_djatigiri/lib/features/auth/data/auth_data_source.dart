@@ -28,9 +28,11 @@ class AuthDataSource {
       final userDoc =
           await _firestore.collection('users').doc(credential.user!.uid).get();
       if (!userDoc.exists)
+        // ignore: curly_braces_in_flow_control_structures
         throw AuthException('User tidak ditemukan di database');
       final data = userDoc.data()!;
       if (data['status'] != 'active')
+        // ignore: curly_braces_in_flow_control_structures
         throw AuthException('Akun tidak aktif, silakan hubungi admin.');
       return UserModel.fromMap(data);
     } on FirebaseAuthException catch (e) {

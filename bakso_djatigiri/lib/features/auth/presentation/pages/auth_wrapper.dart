@@ -20,11 +20,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     // Komentar: Trigger pengecekan user saat startup
     Future.microtask(() {
+      // ignore: use_build_context_synchronously
       context.read<AuthBloc>().add(CheckCurrentUserEvent());
     });
   }
 
   // Komentar: Mengecek status login dari shared_preferences dan status user di Firestore saat aplikasi dibuka
+  // ignore: unused_element
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
@@ -34,6 +36,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) {
           // Tidak ada user login, paksa logout
+          // ignore: use_build_context_synchronously
           context.read<AuthBloc>().add(LogoutEvent());
           return;
         }
@@ -44,12 +47,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 .get();
         if (!userDoc.exists) {
           // Data user tidak ditemukan di Firestore, paksa logout
+          // ignore: use_build_context_synchronously
           context.read<AuthBloc>().add(LogoutEvent());
           return;
         }
         final data = userDoc.data()!;
         if (data['status'] != 'active') {
           // Jika status user tidak aktif, paksa logout
+          // ignore: use_build_context_synchronously
           context.read<AuthBloc>().add(LogoutEvent());
           // Optional: Tampilkan pesan ke user (gunakan snackbar atau dialog jika perlu)
           return;
@@ -57,10 +62,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // Jika status aktif, biarkan AuthBloc tetap Authenticated dan lanjut ke home
       } catch (e) {
         // Jika error (misal koneksi/firestore), paksa logout
+        // ignore: use_build_context_synchronously
         context.read<AuthBloc>().add(LogoutEvent());
       }
     } else {
       // Komentar: Jika belum login, trigger event logout agar AuthBloc ke Unauthenticated
+      // ignore: use_build_context_synchronously
       context.read<AuthBloc>().add(LogoutEvent());
     }
   }

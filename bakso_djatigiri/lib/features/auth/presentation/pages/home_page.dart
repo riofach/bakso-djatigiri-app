@@ -14,6 +14,7 @@ class HomePage extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('is_logged_in');
     // Komentar: Memicu event logout pada AuthBloc
+    // ignore: use_build_context_synchronously
     context.read<AuthBloc>().add(LogoutEvent());
   }
 
