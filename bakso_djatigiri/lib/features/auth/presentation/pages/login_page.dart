@@ -38,18 +38,10 @@ class _LoginPageState extends State<LoginPage> {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setBool('is_logged_in', true);
             // Komentar: Tampilkan snackbar sukses dan redirect ke home
-            // ScaffoldMessenger.of(
-            //   context,
-            // ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
-<<<<<<< HEAD
             Navigator.pushNamedAndRemoveUntil(
               // ignore: use_build_context_synchronously
               context,
               '/home',
-=======
-            Navigator.of(context).pushAndRemoveUntil(
-              FadeInPageRoute(page: const HomePage()),
->>>>>>> 223e90c28c0f06c8e8e8fdb92266d7527091904c
               (route) => false,
             );
           } else if (state is AuthError) {
@@ -102,26 +94,24 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed:
-                          state is AuthLoading
-                              ? null
-                              : () {
-                                // Komentar: Validasi form sebelum submit
-                                if (_formKey.currentState!.validate()) {
-                                  context.read<AuthBloc>().add(
-                                    LoginEvent(
-                                      _emailController.text.trim(),
-                                      _passwordController.text.trim(),
-                                    ),
-                                  );
-                                }
-                              },
-                      child:
-                          state is AuthLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : const Text('Login'),
+                      onPressed: state is AuthLoading
+                          ? null
+                          : () {
+                              // Komentar: Validasi form sebelum submit
+                              if (_formKey.currentState!.validate()) {
+                                context.read<AuthBloc>().add(
+                                      LoginEvent(
+                                        _emailController.text.trim(),
+                                        _passwordController.text.trim(),
+                                      ),
+                                    );
+                              }
+                            },
+                      child: state is AuthLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text('Login'),
                     ),
                   ),
                   const SizedBox(height: 16),
