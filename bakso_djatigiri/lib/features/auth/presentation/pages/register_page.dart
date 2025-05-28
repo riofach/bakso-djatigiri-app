@@ -37,7 +37,6 @@ class _RegisterPageState extends State<RegisterPage> {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setBool('is_logged_in', true);
             // Komentar: Tampilkan snackbar sukses dan redirect ke home
-<<<<<<< HEAD
             // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Registrasi berhasil!')),
@@ -47,14 +46,6 @@ class _RegisterPageState extends State<RegisterPage> {
               // ignore: use_build_context_synchronously
               context,
               '/home',
-=======
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   const SnackBar(content: Text('Registrasi berhasil!')),
-            // );
-            // Komentar: Redirect ke Home dan hapus semua route sebelumnya
-            Navigator.of(context).pushAndRemoveUntil(
-              FadeInPageRoute(page: const HomePage()),
->>>>>>> 223e90c28c0f06c8e8e8fdb92266d7527091904c
               (route) => false,
             );
           } else if (state is AuthError) {
