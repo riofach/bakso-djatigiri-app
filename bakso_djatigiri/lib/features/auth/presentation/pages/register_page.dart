@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bloc/auth_bloc.dart';
 import '../widgets/auth_text_field.dart';
+import '../../../../core/animation/page_transitions.dart';
+import '../../../cashier/presentation/home_page.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -34,13 +37,12 @@ class _RegisterPageState extends State<RegisterPage> {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setBool('is_logged_in', true);
             // Komentar: Tampilkan snackbar sukses dan redirect ke home
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Registrasi berhasil!')),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(content: Text('Registrasi berhasil!')),
+            // );
             // Komentar: Redirect ke Home dan hapus semua route sebelumnya
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
+            Navigator.of(context).pushAndRemoveUntil(
+              FadeInPageRoute(page: const HomePage()),
               (route) => false,
             );
           } else if (state is AuthError) {
@@ -130,7 +132,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/login');
+                      Navigator.of(
+                        context,
+                      ).push(FadeInPageRoute(page: const LoginPage()));
                     },
                     child: const Text('Sudah punya akun? Login'),
                   ),

@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bloc/auth_bloc.dart';
 import '../widgets/auth_text_field.dart';
+import '../../../../core/animation/page_transitions.dart';
+import '../../../cashier/presentation/home_page.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,9 +39,8 @@ class _LoginPageState extends State<LoginPage> {
             // ScaffoldMessenger.of(
             //   context,
             // ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
+            Navigator.of(context).pushAndRemoveUntil(
+              FadeInPageRoute(page: const HomePage()),
               (route) => false,
             );
           } else if (state is AuthError) {
@@ -116,7 +118,9 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/register');
+                      Navigator.of(
+                        context,
+                      ).push(FadeInPageRoute(page: const RegisterPage()));
                     },
                     child: const Text('Belum punya akun? Register'),
                   ),

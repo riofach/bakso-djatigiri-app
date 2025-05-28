@@ -24,9 +24,9 @@ Aplikasi akan dibangun dengan pendekatan profesional menggunakan Flutter dan Fir
 
   - Firestore (NoSQL database)
   - Firebase Auth (Email/Password Auth)
-  - Firebase Storage (tidak digunakan; digantikan oleh ImageKit)
+  - Firebase Storage (tidak digunakan; digantikan oleh supabase storage)
 
-- **ImageKit** (image hosting & CDN)
+- **supabase storage** (image hosting & CDN)
 - **get_it** & **injectable** (Dependency Injection)
 - **flutter_bloc** (State Management)
 - **equatable** (value equality)
@@ -50,7 +50,6 @@ Table users {
 Table ingredients {
   id varchar [pk]
   name varchar
-  stock_unit varchar
   stock_amount int
   image_url varchar
   created_at datetime
@@ -60,6 +59,7 @@ Table menus {
   id varchar [pk]
   name varchar
   price int
+  stock int
   image_url varchar
   created_at datetime
 }
