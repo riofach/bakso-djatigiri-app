@@ -7,6 +7,7 @@ import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
 import '../bloc/stock_bloc.dart';
 import 'create_stock.dart';
+import 'edit_stock.dart';
 
 class PageStock extends StatelessWidget {
   const PageStock({super.key});
@@ -182,96 +183,107 @@ class _PageStockViewState extends State<_PageStockView> {
                             border: Border.all(color: const Color(0xFFEFEFEF)),
                           ),
                           padding: const EdgeInsets.all(4),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image Container
-                              Container(
-                                height: 132,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFEFEF),
-                                  borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                FadeInPageRoute(
+                                  page: EditStockPage(stockId: item.id),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item.imageUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: const [
-                                          Icon(
-                                            Icons.image,
-                                            color: dark900,
-                                            size: 24,
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            'Image placeholder',
-                                            style: TextStyle(
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Image Container
+                                Container(
+                                  height: 132,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFEFEF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      item.imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (c, e, s) => Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: const [
+                                            Icon(
+                                              Icons.image,
                                               color: dark900,
-                                              fontFamily: 'Poppins',
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w400,
+                                              size: 24,
                                             ),
-                                          ),
-                                        ],
+                                            SizedBox(height: 4),
+                                            Text(
+                                              'Image placeholder',
+                                              style: TextStyle(
+                                                color: dark900,
+                                                fontFamily: 'Poppins',
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              // Text Content
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 4,
-                                  right: 4,
-                                  top: 8,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 16,
-                                        color: dark900,
+                                // Text Content
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 4,
+                                    right: 4,
+                                    top: 8,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 16,
+                                          color: dark900,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: Icon(
-                                            Icons.shopping_bag,
-                                            color: primary900,
-                                            size: 14,
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: Icon(
+                                              Icons.shopping_bag,
+                                              color: primary900,
+                                              size: 14,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Stock: ${item.stockAmount}',
-                                          style: const TextStyle(
-                                            fontFamily: 'Poppins',
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w400,
-                                            color: gray900,
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Stock: ${item.stockAmount}',
+                                            style: const TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w400,
+                                              color: gray900,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
