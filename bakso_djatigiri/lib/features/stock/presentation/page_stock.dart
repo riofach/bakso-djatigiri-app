@@ -28,6 +28,7 @@ class _PageStockView extends StatefulWidget {
 }
 
 class _PageStockViewState extends State<_PageStockView> {
+  // ignore: prefer_final_fields
   int _selectedIndex = 3; // Stock di index ke-3
 
   final navBarItems = [

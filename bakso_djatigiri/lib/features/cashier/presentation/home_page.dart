@@ -43,6 +43,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _search = '';
+  // ignore: prefer_final_fields
   int _selectedIndex = 2; // Home di tengah
 
   // Definisi global navBarItems

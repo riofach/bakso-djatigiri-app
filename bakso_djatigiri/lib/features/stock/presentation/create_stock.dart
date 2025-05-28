@@ -46,6 +46,7 @@ class _CreateStockViewState extends State<_CreateStockView> {
       // Tidak perlu imageQuality di sini karena akan dikompresi di BLoC
     );
     if (picked != null) {
+      // ignore: use_build_context_synchronously
       context.read<CreateStockBloc>().add(PickImageEvent(picked.path));
     }
   }
@@ -198,9 +199,11 @@ class _CreateStockViewState extends State<_CreateStockView> {
                           fontSize: 16,
                         ),
                       ).copyWith(
+                        // ignore: deprecated_member_use
                         backgroundColor: MaterialStateProperty.all(
                           Colors.transparent,
                         ),
+                        // ignore: deprecated_member_use
                         shadowColor: MaterialStateProperty.all(
                           Colors.transparent,
                         ),

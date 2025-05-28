@@ -10,6 +10,7 @@ class CustomNavBar extends StatelessWidget {
   final Color backgroundColor;
   final ValueChanged<int>? onTap; // opsional, override jika perlu
 
+  // ignore: use_super_parameters
   const CustomNavBar({
     Key? key,
     required this.currentIndex,
@@ -28,6 +29,7 @@ class CustomNavBar extends StatelessWidget {
         color: backgroundColor,
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
@@ -70,6 +72,7 @@ class CustomNavBar extends StatelessWidget {
                 }
               }
             },
+            // ignore: sized_box_for_whitespace
             child: Container(
               width: 72,
               // Menggunakan SizedBox dengan height yang cukup
@@ -88,6 +91,7 @@ class CustomNavBar extends StatelessWidget {
                           gradient: vertical01,
                           boxShadow: [
                             BoxShadow(
+                              // ignore: deprecated_member_use
                               color: primary950.withOpacity(0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),

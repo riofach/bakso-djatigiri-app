@@ -1,5 +1,6 @@
 // Helper untuk kompresi gambar sebelum upload ke Supabase Storage
 // File ini berisi fungsi untuk mengkompresi gambar agar ukuran maksimal 500KB
+// ignore_for_file: unused_import
 
 import 'dart:io';
 import 'dart:typed_data';
