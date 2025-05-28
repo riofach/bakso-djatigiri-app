@@ -38,6 +38,9 @@ class _LoginPageState extends State<LoginPage> {
             final prefs = await SharedPreferences.getInstance();
             await prefs.setBool('is_logged_in', true);
             // Komentar: Tampilkan snackbar sukses dan redirect ke home
+            // ScaffoldMessenger.of(
+            //   context,
+            // ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
             Navigator.pushNamedAndRemoveUntil(
               // ignore: use_build_context_synchronously
               context,
