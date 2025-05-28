@@ -1,7 +1,10 @@
 // BLoC untuk fitur stock management
+import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+import '../../../core/utils/storage_helper.dart';
 
 // Model
 class IngredientModel extends Equatable {
@@ -157,6 +160,20 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     Emitter<StockState> emit,
   ) async {
     try {
+      // Ambil data stock untuk mendapatkan URL gambar
+      final docSnapshot =
+          await _firestore.collection('ingredients').doc(event.id).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data();
+        final imageUrl = data?['image_url'] as String?;
+
+        // Hapus gambar dari Supabase Storage jika ada
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          await StorageHelper.deleteFileFromUrl(imageUrl);
+        }
+      }
+
+      // Hapus data dari Firestore
       await _firestore.collection('ingredients').doc(event.id).delete();
 
       if (state is StockLoaded) {
@@ -168,6 +185,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
         emit(currentState.copyWith(ingredients: updatedIngredients));
       }
     } catch (e) {
+      debugPrint('Gagal menghapus stock: $e');
       emit(StockError('Gagal menghapus stock: $e'));
     }
   }

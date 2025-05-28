@@ -1,6 +1,7 @@
 // Helper Supabase Storage Service
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class SupabaseStorageService {
   static const String bucket = 'bakso-djatigiri';
@@ -16,16 +17,37 @@ class SupabaseStorageService {
 
   // Upload file ke Supabase Storage
   static Future<String?> uploadFile(File file) async {
-    final supabase = Supabase.instance.client;
-    final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
-    final storageResponse = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file);
-    if (storageResponse.isEmpty) return null;
-    // Dapatkan public URL
-    final publicUrl = supabase.storage.from(bucket).getPublicUrl(fileName);
-    return publicUrl;
+    try {
+      final supabase = Supabase.instance.client;
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
+      final storageResponse =
+          await supabase.storage.from(bucket).upload(fileName, file);
+      if (storageResponse.isEmpty) return null;
+      // Dapatkan public URL
+      final publicUrl = supabase.storage.from(bucket).getPublicUrl(fileName);
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error saat upload file: $e');
+      return null;
+    }
+  }
+
+  /// Menghapus file dari Supabase Storage
+  /// [fileName] adalah nama file yang akan dihapus
+  static Future<bool> deleteFile(String fileName) async {
+    try {
+      final supabase = Supabase.instance.client;
+
+      // Hapus file dari bucket yang sama dengan yang digunakan untuk upload
+      await supabase.storage.from(bucket).remove([fileName]);
+
+      debugPrint('Berhasil menghapus file: $fileName');
+      return true;
+    } catch (e) {
+      debugPrint('Error saat menghapus file: $e');
+      return false;
+    }
   }
 }
 

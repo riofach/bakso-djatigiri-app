@@ -97,26 +97,24 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed:
-                          state is AuthLoading
-                              ? null
-                              : () {
-                                // Komentar: Validasi form sebelum submit
-                                if (_formKey.currentState!.validate()) {
-                                  context.read<AuthBloc>().add(
-                                    LoginEvent(
-                                      _emailController.text.trim(),
-                                      _passwordController.text.trim(),
-                                    ),
-                                  );
-                                }
-                              },
-                      child:
-                          state is AuthLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : const Text('Login'),
+                      onPressed: state is AuthLoading
+                          ? null
+                          : () {
+                              // Komentar: Validasi form sebelum submit
+                              if (_formKey.currentState!.validate()) {
+                                context.read<AuthBloc>().add(
+                                      LoginEvent(
+                                        _emailController.text.trim(),
+                                        _passwordController.text.trim(),
+                                      ),
+                                    );
+                              }
+                            },
+                      child: state is AuthLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text('Login'),
                     ),
                   ),
                   const SizedBox(height: 16),

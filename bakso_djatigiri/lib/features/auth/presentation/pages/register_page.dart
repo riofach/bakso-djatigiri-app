@@ -111,27 +111,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed:
-                          state is AuthLoading
-                              ? null
-                              : () {
-                                // Komentar: Validasi form sebelum submit
-                                if (_formKey.currentState!.validate()) {
-                                  context.read<AuthBloc>().add(
-                                    RegisterEvent(
-                                      _emailController.text.trim(),
-                                      _passwordController.text.trim(),
-                                      _nameController.text.trim(),
-                                    ),
-                                  );
-                                }
-                              },
-                      child:
-                          state is AuthLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : const Text('Register'),
+                      onPressed: state is AuthLoading
+                          ? null
+                          : () {
+                              // Komentar: Validasi form sebelum submit
+                              if (_formKey.currentState!.validate()) {
+                                context.read<AuthBloc>().add(
+                                      RegisterEvent(
+                                        _emailController.text.trim(),
+                                        _passwordController.text.trim(),
+                                        _nameController.text.trim(),
+                                      ),
+                                    );
+                              }
+                            },
+                      child: state is AuthLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text('Register'),
                     ),
                   ),
                   const SizedBox(height: 16),
