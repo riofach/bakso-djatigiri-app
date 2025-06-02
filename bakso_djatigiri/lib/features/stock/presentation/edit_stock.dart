@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import 'package:mie_bakso_djatigiri/features/stock/presentation/page_stock.dart';
@@ -11,17 +12,15 @@ import '../bloc/edit_stock_bloc.dart';
 import 'package:mie_bakso_djatigiri/features/stock/presentation/delete_stock_dialog.dart';
 
 class EditStockPage extends StatelessWidget {
-  final String stockId;
+  final String id;
 
-  const EditStockPage({
-    super.key,
-    required this.stockId,
-  });
+  const EditStockPage({super.key, required this.id});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => EditStockBloc()..add(LoadStockEvent(stockId)),
+      create: (_) =>
+          GetIt.instance<EditStockBloc>()..add(LoadIngredientEvent(id)),
       child: const _EditStockView(),
     );
   }
@@ -337,23 +336,21 @@ class _EditStockViewState extends State<_EditStockView> {
   }
 
   void _update(BuildContext context) {
-    context.read<EditStockBloc>().add(UpdateStockEvent());
+    context.read<EditStockBloc>().add(SubmitEditEvent());
   }
 
   void _showDeleteConfirmation(BuildContext context) {
     // Ambil data yang diperlukan dari state
     final stockId = context.read<EditStockBloc>().state.id;
     final stockName = context.read<EditStockBloc>().state.name;
-    final imageUrl = context.read<EditStockBloc>().state.imageUrl;
 
     // Tampilkan dialog dengan BLoC terpisah
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => DeleteStockDialog(
-        stockId: stockId,
-        stockName: stockName,
-        imageUrl: imageUrl,
+        id: stockId,
+        name: stockName,
       ),
     );
   }

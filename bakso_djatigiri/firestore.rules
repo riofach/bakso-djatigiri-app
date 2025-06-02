@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hanya user yang login yang bisa baca/tulis dokumen miliknya sendiri
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Koleksi ingredients, menus, transactions, dsb: hanya user login yang bisa read/write
+    match /ingredients/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /menus/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Menambahkan rules untuk menu_requirements
+    match /menu_requirements/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /transactions/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /transaction_items/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default deny untuk koleksi lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

@@ -2,6 +2,7 @@
 // Menampilkan data dari Firestore collection 'ingredients' dan search bar
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
@@ -15,7 +16,7 @@ class PageStock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => StockBloc()..add(LoadStocksEvent()),
+      create: (_) => GetIt.instance<StockBloc>()..add(LoadStocksEvent()),
       child: const _PageStockView(),
     );
   }
@@ -235,7 +236,7 @@ class _PageStockViewState extends State<_PageStockView> {
                             onTap: () {
                               Navigator.of(context).push(
                                 FadeInPageRoute(
-                                  page: EditStockPage(stockId: item.id),
+                                  page: EditStockPage(id: item.id),
                                 ),
                               );
                             },
@@ -251,36 +252,67 @@ class _PageStockViewState extends State<_PageStockView> {
                                     color: const Color(0xFFEFEFEF),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      item.imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) => Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: const [
-                                            Icon(
-                                              Icons.image,
-                                              color: dark900,
-                                              size: 24,
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              'Image placeholder',
-                                              style: TextStyle(
-                                                color: dark900,
-                                                fontFamily: 'Poppins',
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.w400,
+                                  child: item.imageUrl.isNotEmpty &&
+                                          Uri.parse(item.imageUrl).isAbsolute &&
+                                          (item.imageUrl
+                                                  .startsWith('http://') ||
+                                              item.imageUrl
+                                                  .startsWith('https://'))
+                                      ? ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Image.network(
+                                            item.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (c, e, s) => Center(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: const [
+                                                  Icon(
+                                                    Icons.image,
+                                                    color: dark900,
+                                                    size: 24,
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    'Image placeholder',
+                                                    style: TextStyle(
+                                                      color: dark900,
+                                                      fontFamily: 'Poppins',
+                                                      fontSize: 8,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: const [
+                                              Icon(
+                                                Icons.image,
+                                                color: dark900,
+                                                size: 24,
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                'Image placeholder',
+                                                style: TextStyle(
+                                                  color: dark900,
+                                                  fontFamily: 'Poppins',
+                                                  fontSize: 8,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
                                 ),
 
                                 // Text Content

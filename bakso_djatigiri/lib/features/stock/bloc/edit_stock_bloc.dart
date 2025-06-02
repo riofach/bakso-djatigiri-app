@@ -5,10 +5,14 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:injectable/injectable.dart';
+import '../domain/entities/ingredient_entity.dart';
+import '../domain/usecases/get_ingredients_usecase.dart';
+import '../domain/usecases/update_ingredient_usecase.dart';
 import '../../../config/supabase_storage.dart';
 import '../../../core/utils/image_compressor.dart';
 import '../../../core/utils/storage_helper.dart';
+import '../../../features/menu/domain/usecases/update_all_menu_stocks_usecase.dart';
 
 // Event
 abstract class EditStockEvent extends Equatable {
@@ -16,51 +20,41 @@ abstract class EditStockEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadStockEvent extends EditStockEvent {
-  final String stockId;
-
-  LoadStockEvent(this.stockId);
-
+class LoadIngredientEvent extends EditStockEvent {
+  final String id;
+  LoadIngredientEvent(this.id);
   @override
-  List<Object?> get props => [stockId];
+  List<Object?> get props => [id];
 }
 
 class PickImageEvent extends EditStockEvent {
   final String? imagePath; // local path
-
   PickImageEvent(this.imagePath);
-
   @override
   List<Object?> get props => [imagePath];
 }
 
 class NameChangedEvent extends EditStockEvent {
   final String name;
-
   NameChangedEvent(this.name);
-
   @override
   List<Object?> get props => [name];
 }
 
 class AmountChangedEvent extends EditStockEvent {
   final String amount;
-
   AmountChangedEvent(this.amount);
-
   @override
   List<Object?> get props => [amount];
 }
 
-class UpdateStockEvent extends EditStockEvent {}
-
-class DeleteStockEvent extends EditStockEvent {}
+class SubmitEditEvent extends EditStockEvent {}
 
 // State
 class EditStockState extends Equatable {
   final String id;
-  final String? imagePath; // local path jika ada perubahan gambar
-  final String imageUrl; // URL gambar yang sudah ada
+  final String? imagePath; // Local path untuk file baru
+  final String imageUrl; // URL untuk gambar yang sudah ada
   final String name;
   final String amount;
   final bool isLoading;
@@ -119,159 +113,120 @@ class EditStockState extends Equatable {
 }
 
 // Bloc
+@injectable
 class EditStockBloc extends Bloc<EditStockEvent, EditStockState> {
-  final FirebaseFirestore _firestore;
+  final GetIngredientsUseCase _getIngredientsUseCase;
+  final UpdateIngredientUseCase _updateIngredientUseCase;
+  final UpdateAllMenuStocksUseCase _updateAllMenuStocksUseCase;
 
-  EditStockBloc({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(const EditStockState()) {
-    on<LoadStockEvent>(_onLoadStock);
-    on<PickImageEvent>(_onPickImage);
-    on<NameChangedEvent>(_onNameChanged);
-    on<AmountChangedEvent>(_onAmountChanged);
-    on<UpdateStockEvent>(_onUpdateStock);
-    on<DeleteStockEvent>(_onDeleteStock);
+  EditStockBloc(
+    this._getIngredientsUseCase,
+    this._updateIngredientUseCase,
+    this._updateAllMenuStocksUseCase,
+  ) : super(const EditStockState()) {
+    on<LoadIngredientEvent>(_onLoadIngredient);
+    on<PickImageEvent>((event, emit) {
+      emit(state.copyWith(imagePath: event.imagePath, error: null));
+    });
+    on<NameChangedEvent>((event, emit) {
+      emit(state.copyWith(name: event.name, error: null));
+    });
+    on<AmountChangedEvent>((event, emit) {
+      emit(state.copyWith(amount: event.amount, error: null));
+    });
+    on<SubmitEditEvent>(_onSubmitEdit);
   }
 
-  Future<void> _onLoadStock(
-    LoadStockEvent event,
+  Future<void> _onLoadIngredient(
+    LoadIngredientEvent event,
     Emitter<EditStockState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final doc =
-          await _firestore.collection('ingredients').doc(event.stockId).get();
+      final ingredients = await _getIngredientsUseCase();
+      final ingredient = ingredients.firstWhere(
+        (element) => element.id == event.id,
+      );
 
-      if (!doc.exists) {
-        emit(state.copyWith(
+      emit(
+        state.copyWith(
+          id: ingredient.id,
+          name: ingredient.name,
+          amount: ingredient.stockAmount.toString(),
+          imageUrl: ingredient.imageUrl,
           isLoading: false,
-          error: 'Stock tidak ditemukan',
-        ));
-        return;
-      }
-
-      final data = doc.data()!;
-
-      emit(state.copyWith(
-        id: doc.id,
-        name: data['name'] ?? '',
-        amount: (data['stock_amount'] ?? 0).toString(),
-        imageUrl: data['image_url'] ?? '',
-        isLoading: false,
-      ));
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
-        error: 'Gagal memuat data: $e',
+        error: 'Gagal memuat data bahan: $e',
       ));
     }
   }
 
-  void _onPickImage(PickImageEvent event, Emitter<EditStockState> emit) {
-    emit(state.copyWith(imagePath: event.imagePath, error: null));
-  }
-
-  void _onNameChanged(NameChangedEvent event, Emitter<EditStockState> emit) {
-    emit(state.copyWith(name: event.name, error: null));
-  }
-
-  void _onAmountChanged(
-      AmountChangedEvent event, Emitter<EditStockState> emit) {
-    emit(state.copyWith(amount: event.amount, error: null));
-  }
-
-  Future<void> _onUpdateStock(
-    UpdateStockEvent event,
+  Future<void> _onSubmitEdit(
+    SubmitEditEvent event,
     Emitter<EditStockState> emit,
   ) async {
     if (state.name.isEmpty || state.amount.isEmpty) {
-      emit(state.copyWith(error: 'Nama dan jumlah stock wajib diisi'));
+      emit(state.copyWith(error: 'Nama dan jumlah wajib diisi'));
       return;
     }
 
     emit(state.copyWith(isLoading: true, error: null));
-
     try {
-      String imageUrl = state.imageUrl;
+      // Update stok bahan
+      await _updateIngredientUseCase(
+        id: state.id,
+        name: state.name,
+        stockAmount: int.tryParse(state.amount) ?? 0,
+        imageFile: state.imagePath != null ? File(state.imagePath!) : null,
+        currentImageUrl: state.imageUrl,
+      );
 
-      // Jika ada perubahan gambar, upload gambar baru dan hapus gambar lama
-      if (state.imagePath != null) {
-        // Kompresi gambar terlebih dahulu
-        final compressedFile = await _compressImage(state.imagePath!);
-        if (compressedFile == null) {
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'Gagal mengkompresi gambar',
-          ));
-          return;
-        }
+      // Update stok semua menu yang menggunakan bahan ini
+      final ingredients = await _getIngredientsUseCase();
+      final updatedCount = await _updateAllMenuStocksUseCase(
+        availableIngredients: ingredients,
+      );
 
-        // Upload ke Supabase Storage
-        final newImageUrl = await _uploadImageToSupabase(compressedFile.path);
-        if (newImageUrl == null) {
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'Gagal upload gambar ke Supabase Storage',
-          ));
-          return;
-        }
+      debugPrint('Berhasil memperbarui stok $updatedCount menu');
 
-        // Hapus gambar lama dari Supabase Storage jika ada
-        if (state.imageUrl.isNotEmpty) {
-          await StorageHelper.deleteFileFromUrl(state.imageUrl);
-        }
-
-        imageUrl = newImageUrl;
-      }
-
-      // Update data di Firestore
-      await _firestore.collection('ingredients').doc(state.id).update({
-        'name': state.name,
-        'stock_amount': int.tryParse(state.amount) ?? 0,
-        'image_url': imageUrl,
-        // Tidak update created_at karena ini edit
-      });
-
-      emit(state.copyWith(
-        isLoading: false,
-        isSuccess: true,
-        imageUrl: imageUrl,
-      ));
+      emit(state.copyWith(isLoading: false, isSuccess: true));
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Terjadi kesalahan saat update: $e',
-      ));
+      debugPrint('Error updating stock: $e');
+      emit(state.copyWith(isLoading: false, error: 'Terjadi kesalahan: $e'));
     }
   }
 
-  Future<void> _onDeleteStock(
-    DeleteStockEvent event,
-    Emitter<EditStockState> emit,
-  ) async {
-    emit(state.copyWith(isLoading: true, error: null));
+  // Future<void> _onDeleteStock(
+  //   DeleteStockEvent event,
+  //   Emitter<EditStockState> emit,
+  // ) async {
+  //   emit(state.copyWith(isLoading: true, error: null));
 
-    try {
-      // Hapus gambar dari Supabase Storage terlebih dahulu
-      if (state.imageUrl.isNotEmpty) {
-        await StorageHelper.deleteFileFromUrl(state.imageUrl);
-      }
+  //   try {
+  //     // Hapus gambar dari Supabase Storage terlebih dahulu
+  //     if (state.imageUrl.isNotEmpty) {
+  //       await StorageHelper.deleteFileFromUrl(state.imageUrl);
+  //     }
 
-      // Hapus data dari Firestore
-      await _firestore.collection('ingredients').doc(state.id).delete();
+  //     // Hapus data dari Firestore
+  //     await _firestore.collection('ingredients').doc(state.id).delete();
 
-      emit(state.copyWith(
-        isLoading: false,
-        isDeleted: true,
-      ));
-    } catch (e) {
-      debugPrint('Error saat menghapus stock: $e');
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'Gagal menghapus stock: $e',
-      ));
-    }
-  }
+  //     emit(state.copyWith(
+  //       isLoading: false,
+  //       isDeleted: true,
+  //     ));
+  //   } catch (e) {
+  //     debugPrint('Error saat menghapus stock: $e');
+  //     emit(state.copyWith(
+  //       isLoading: false,
+  //       error: 'Gagal menghapus stock: $e',
+  //     ));
+  //   }
+  // }
 
   Future<File?> _compressImage(String path) async {
     final file = File(path);

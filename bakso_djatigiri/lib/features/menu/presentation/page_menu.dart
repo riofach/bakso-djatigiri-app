@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
 import '../bloc/menu_bloc.dart';
+import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
+import 'package:mie_bakso_djatigiri/features/menu/presentation/create_menu.dart';
 
 class PageMenu extends StatelessWidget {
   const PageMenu({super.key});
@@ -61,23 +63,24 @@ class _PageMenuViewState extends State<_PageMenuView> {
       appBar: AppBar(
         backgroundColor: backgroundColor,
         elevation: 0,
-        centerTitle: true,
         title: const Text(
-          'Menu Product',
+          'Daftar Menu',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
             color: dark900,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
           ),
         ),
+        centerTitle: true,
         actions: [
-          // Tombol Add
+          // Tombol Add di pojok kanan atas
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
               onTap: () {
-                // Navigasi ke halaman tambah menu
+                Navigator.of(context).push(
+                  FadeInPageRoute(page: const CreateMenuPage()),
+                );
               },
               child: Container(
                 width: 44,
@@ -275,7 +278,10 @@ class _PageMenuViewState extends State<_PageMenuView> {
               color: gray600,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: menu.imageUrl.isNotEmpty
+            child: menu.imageUrl.isNotEmpty &&
+                    Uri.parse(menu.imageUrl).isAbsolute &&
+                    (menu.imageUrl.startsWith('http://') ||
+                        menu.imageUrl.startsWith('https://'))
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
@@ -358,20 +364,24 @@ class _PageMenuViewState extends State<_PageMenuView> {
   }
 
   Widget _buildImagePlaceholder() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
-        Icon(Icons.image, color: dark900, size: 24),
-        SizedBox(height: 4),
-        Text(
-          'Image placeholder',
-          style: TextStyle(
-            fontSize: 8,
-            fontFamily: 'Poppins',
-            color: dark900,
+    return Container(
+      width: double.infinity,
+      height: 132,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.image, color: dark900, size: 32),
+          SizedBox(height: 4),
+          Text(
+            'Image placeholder',
+            style: TextStyle(
+              fontSize: 10,
+              fontFamily: 'Poppins',
+              color: dark900,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
