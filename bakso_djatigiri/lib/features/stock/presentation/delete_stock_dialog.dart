@@ -1,32 +1,30 @@
-// Dialog untuk konfirmasi delete stock
+// Dialog konfirmasi untuk menghapus stock
 // File ini berisi widget dialog untuk konfirmasi delete stock
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import 'package:mie_bakso_djatigiri/features/stock/presentation/page_stock.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../bloc/delete_stock_bloc.dart';
 
 class DeleteStockDialog extends StatelessWidget {
-  final String stockId;
-  final String stockName;
-  final String imageUrl;
+  final String id;
+  final String name;
 
   const DeleteStockDialog({
     super.key,
-    required this.stockId,
-    required this.stockName,
-    required this.imageUrl,
+    required this.id,
+    required this.name,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DeleteStockBloc(),
+      create: (_) => GetIt.instance<DeleteStockBloc>(),
       child: _DeleteStockDialogContent(
-        stockId: stockId,
-        stockName: stockName,
-        imageUrl: imageUrl,
+        stockId: id,
+        stockName: name,
       ),
     );
   }
@@ -35,12 +33,10 @@ class DeleteStockDialog extends StatelessWidget {
 class _DeleteStockDialogContent extends StatelessWidget {
   final String stockId;
   final String stockName;
-  final String imageUrl;
 
   const _DeleteStockDialogContent({
     required this.stockId,
     required this.stockName,
-    required this.imageUrl,
   });
 
   @override
@@ -92,7 +88,6 @@ class _DeleteStockDialogContent extends StatelessWidget {
                         context.read<DeleteStockBloc>().add(
                               DeleteStockItemEvent(
                                 id: stockId,
-                                imageUrl: imageUrl,
                               ),
                             );
                       },

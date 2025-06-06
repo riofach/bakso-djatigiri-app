@@ -70,7 +70,7 @@ dependencies:
   # Equatable
   equatable: ^2.0.7
   # Intl (untuk format tanggal)
-  intl: ^0.18.1
+  intl: ^0.20.2
   go_router: ^15.1.2
   firebase_core_platform_interface: ^5.4.0
 

@@ -2,6 +2,7 @@
 // Menampilkan data dari Firestore collection 'ingredients' dan search bar
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
@@ -15,7 +16,7 @@ class PageStock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => StockBloc()..add(LoadStocksEvent()),
+      create: (_) => GetIt.instance<StockBloc>()..add(LoadStocksEvent()),
       child: const _PageStockView(),
     );
   }
@@ -64,20 +65,68 @@ class _PageStockViewState extends State<_PageStockView> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: white900,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: dark900, size: 20),
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).push(FadeInPageRoute(page: const CreateStockPage()));
-                },
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  FadeInPageRoute(page: const CreateStockPage()),
+                );
+              },
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: white900,
+                  borderRadius: BorderRadius.all(Radius.circular(100)),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: white900,
+                    ),
+                    child: Stack(
+                      children: [
+                        // Horizontal line
+                        Positioned(
+                          left: 6.19,
+                          top: 9.24,
+                          child: Container(
+                            width: 7.61,
+                            height: 1.5,
+                            color: dark900,
+                          ),
+                        ),
+                        // Vertical line
+                        Positioned(
+                          left: 9.25,
+                          top: 6.19,
+                          child: Container(
+                            width: 1.5,
+                            height: 7.61,
+                            color: dark900,
+                          ),
+                        ),
+                        // Border
+                        Positioned(
+                          left: 0.92,
+                          top: 0.92,
+                          child: Container(
+                            width: 18.17,
+                            height: 18.17,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: dark900,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -187,7 +236,7 @@ class _PageStockViewState extends State<_PageStockView> {
                             onTap: () {
                               Navigator.of(context).push(
                                 FadeInPageRoute(
-                                  page: EditStockPage(stockId: item.id),
+                                  page: EditStockPage(id: item.id),
                                 ),
                               );
                             },
@@ -203,36 +252,67 @@ class _PageStockViewState extends State<_PageStockView> {
                                     color: const Color(0xFFEFEFEF),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      item.imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) => Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: const [
-                                            Icon(
-                                              Icons.image,
-                                              color: dark900,
-                                              size: 24,
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              'Image placeholder',
-                                              style: TextStyle(
-                                                color: dark900,
-                                                fontFamily: 'Poppins',
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.w400,
+                                  child: item.imageUrl.isNotEmpty &&
+                                          Uri.parse(item.imageUrl).isAbsolute &&
+                                          (item.imageUrl
+                                                  .startsWith('http://') ||
+                                              item.imageUrl
+                                                  .startsWith('https://'))
+                                      ? ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Image.network(
+                                            item.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (c, e, s) => Center(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: const [
+                                                  Icon(
+                                                    Icons.image,
+                                                    color: dark900,
+                                                    size: 24,
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    'Image placeholder',
+                                                    style: TextStyle(
+                                                      color: dark900,
+                                                      fontFamily: 'Poppins',
+                                                      fontSize: 8,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: const [
+                                              Icon(
+                                                Icons.image,
+                                                color: dark900,
+                                                size: 24,
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                'Image placeholder',
+                                                style: TextStyle(
+                                                  color: dark900,
+                                                  fontFamily: 'Poppins',
+                                                  fontSize: 8,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
                                 ),
 
                                 // Text Content
@@ -262,7 +342,7 @@ class _PageStockViewState extends State<_PageStockView> {
                                             width: 12,
                                             height: 12,
                                             child: Icon(
-                                              Icons.shopping_bag,
+                                              Icons.local_fire_department,
                                               color: primary900,
                                               size: 14,
                                             ),
@@ -300,6 +380,14 @@ class _PageStockViewState extends State<_PageStockView> {
       bottomNavigationBar: CustomNavBar(
         currentIndex: _selectedIndex,
         items: navBarItems,
+        onTap: (index) {
+          if (index != _selectedIndex) {
+            Navigator.pushReplacementNamed(
+              context,
+              navBarItems[index].route,
+            );
+          }
+        },
       ),
     );
   }

@@ -1,40 +1,12 @@
 // BLoC untuk fitur stock management
-import 'dart:io';
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import '../../../core/utils/storage_helper.dart';
-
-// Model
-class IngredientModel extends Equatable {
-  final String id;
-  final String name;
-  final int stockAmount;
-  final String imageUrl;
-  final DateTime createdAt;
-
-  const IngredientModel({
-    required this.id,
-    required this.name,
-    required this.stockAmount,
-    required this.imageUrl,
-    required this.createdAt,
-  });
-
-  factory IngredientModel.fromMap(Map<String, dynamic> map, String id) {
-    return IngredientModel(
-      id: id,
-      name: map['name'] ?? '',
-      stockAmount: map['stock_amount'] ?? 0,
-      imageUrl: map['image_url'] ?? '',
-      createdAt: (map['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, name, stockAmount, imageUrl, createdAt];
-}
+import 'package:injectable/injectable.dart';
+import '../domain/entities/ingredient_entity.dart';
+import '../domain/usecases/delete_ingredient_usecase.dart';
+import '../domain/usecases/get_ingredients_usecase.dart';
+import '../../../features/menu/domain/usecases/update_all_menu_stocks_usecase.dart';
 
 // Event
 abstract class StockEvent extends Equatable {
@@ -77,12 +49,12 @@ class StockInitial extends StockState {}
 class StockLoading extends StockState {}
 
 class StockLoaded extends StockState {
-  final List<IngredientModel> ingredients;
+  final List<IngredientEntity> ingredients;
   final String searchQuery;
 
   const StockLoaded({required this.ingredients, this.searchQuery = ''});
 
-  List<IngredientModel> get filteredIngredients => searchQuery.isEmpty
+  List<IngredientEntity> get filteredIngredients => searchQuery.isEmpty
       ? ingredients
       : ingredients
           .where(
@@ -96,7 +68,7 @@ class StockLoaded extends StockState {
   List<Object?> get props => [ingredients, searchQuery];
 
   StockLoaded copyWith({
-    List<IngredientModel>? ingredients,
+    List<IngredientEntity>? ingredients,
     String? searchQuery,
   }) {
     return StockLoaded(
@@ -116,12 +88,17 @@ class StockError extends StockState {
 }
 
 // Bloc
+@injectable
 class StockBloc extends Bloc<StockEvent, StockState> {
-  final FirebaseFirestore _firestore;
+  final GetIngredientsUseCase _getIngredientsUseCase;
+  final DeleteIngredientUseCase _deleteIngredientUseCase;
+  final UpdateAllMenuStocksUseCase _updateAllMenuStocksUseCase;
 
-  StockBloc({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(StockInitial()) {
+  StockBloc(
+    this._getIngredientsUseCase,
+    this._deleteIngredientUseCase,
+    this._updateAllMenuStocksUseCase,
+  ) : super(StockInitial()) {
     on<LoadStocksEvent>(_onLoadStocks);
     on<SearchStocksEvent>(_onSearchStocks);
     on<DeleteStockEvent>(_onDeleteStock);
@@ -133,15 +110,7 @@ class StockBloc extends Bloc<StockEvent, StockState> {
   ) async {
     emit(StockLoading());
     try {
-      final snapshot = await _firestore
-          .collection('ingredients')
-          .orderBy('created_at', descending: false)
-          .get();
-
-      final ingredients = snapshot.docs
-          .map((doc) => IngredientModel.fromMap(doc.data(), doc.id))
-          .toList();
-
+      final ingredients = await _getIngredientsUseCase();
       emit(StockLoaded(ingredients: ingredients));
     } catch (e) {
       emit(StockError('Gagal memuat data stock: $e'));
@@ -160,22 +129,10 @@ class StockBloc extends Bloc<StockEvent, StockState> {
     Emitter<StockState> emit,
   ) async {
     try {
-      // Ambil data stock untuk mendapatkan URL gambar
-      final docSnapshot =
-          await _firestore.collection('ingredients').doc(event.id).get();
-      if (docSnapshot.exists) {
-        final data = docSnapshot.data();
-        final imageUrl = data?['image_url'] as String?;
+      // Hapus bahan
+      await _deleteIngredientUseCase(event.id);
 
-        // Hapus gambar dari Supabase Storage jika ada
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          await StorageHelper.deleteFileFromUrl(imageUrl);
-        }
-      }
-
-      // Hapus data dari Firestore
-      await _firestore.collection('ingredients').doc(event.id).delete();
-
+      // Update UI terlebih dahulu
       if (state is StockLoaded) {
         final currentState = state as StockLoaded;
         final updatedIngredients = currentState.ingredients
@@ -184,6 +141,14 @@ class StockBloc extends Bloc<StockEvent, StockState> {
 
         emit(currentState.copyWith(ingredients: updatedIngredients));
       }
+
+      // Update stok semua menu yang mungkin menggunakan bahan ini
+      final ingredients = await _getIngredientsUseCase();
+      final updatedCount = await _updateAllMenuStocksUseCase(
+        availableIngredients: ingredients,
+      );
+
+      debugPrint('Berhasil memperbarui stok $updatedCount menu');
     } catch (e) {
       debugPrint('Gagal menghapus stock: $e');
       emit(StockError('Gagal menghapus stock: $e'));

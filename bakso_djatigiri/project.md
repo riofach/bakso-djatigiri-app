@@ -55,14 +55,14 @@ Table ingredients {
   created_at datetime
 }
 
-Table menus {
-  id varchar [pk]
-  name varchar
-  price int
-  stock int
-  image_url varchar
-  created_at datetime
-}
+  Table menus {
+    id varchar [pk]
+    name varchar
+    price int
+    stock int
+    image_url varchar
+    created_at datetime
+  }
 
 Table menu_requirements {
   id varchar [pk]

@@ -4,8 +4,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/utils/storage_helper.dart';
+import 'package:injectable/injectable.dart';
+import '../domain/usecases/delete_ingredient_usecase.dart';
 
 // Event
 abstract class DeleteStockEvent extends Equatable {
@@ -15,12 +15,11 @@ abstract class DeleteStockEvent extends Equatable {
 
 class DeleteStockItemEvent extends DeleteStockEvent {
   final String id;
-  final String imageUrl;
 
-  DeleteStockItemEvent({required this.id, required this.imageUrl});
+  DeleteStockItemEvent({required this.id});
 
   @override
-  List<Object?> get props => [id, imageUrl];
+  List<Object?> get props => [id];
 }
 
 // State
@@ -54,12 +53,11 @@ class DeleteStockError extends DeleteStockState {
 }
 
 // Bloc
+@injectable
 class DeleteStockBloc extends Bloc<DeleteStockEvent, DeleteStockState> {
-  final FirebaseFirestore _firestore;
+  final DeleteIngredientUseCase _deleteIngredientUseCase;
 
-  DeleteStockBloc({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(DeleteStockInitial()) {
+  DeleteStockBloc(this._deleteIngredientUseCase) : super(DeleteStockInitial()) {
     on<DeleteStockItemEvent>(_onDeleteStockItem);
   }
 
@@ -70,14 +68,7 @@ class DeleteStockBloc extends Bloc<DeleteStockEvent, DeleteStockState> {
     emit(DeleteStockLoading());
 
     try {
-      // Hapus gambar dari Supabase Storage terlebih dahulu
-      if (event.imageUrl.isNotEmpty) {
-        await StorageHelper.deleteFileFromUrl(event.imageUrl);
-      }
-
-      // Hapus data dari Firestore
-      await _firestore.collection('ingredients').doc(event.id).delete();
-
+      await _deleteIngredientUseCase(event.id);
       emit(DeleteStockSuccess(event.id));
     } catch (e) {
       debugPrint('Error saat menghapus stock: $e');

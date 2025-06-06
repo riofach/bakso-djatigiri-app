@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import 'package:mie_bakso_djatigiri/features/stock/presentation/page_stock.dart';
@@ -15,7 +16,7 @@ class CreateStockPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CreateStockBloc(),
+      create: (_) => GetIt.instance<CreateStockBloc>(),
       child: const _CreateStockView(),
     );
   }

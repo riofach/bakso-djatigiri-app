@@ -1,13 +1,13 @@
 // BLoC untuk fitur tambah stock bahan
 // ignore_for_file: unused_import
+import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../config/supabase_storage.dart';
-import '../../../core/utils/image_compressor.dart';
+import 'package:injectable/injectable.dart';
+import '../domain/usecases/add_ingredient_usecase.dart';
+import '../domain/usecases/get_ingredients_usecase.dart';
+import '../../../features/menu/domain/usecases/update_all_menu_stocks_usecase.dart';
 
 // Event
 abstract class CreateStockEvent extends Equatable {
@@ -91,12 +91,17 @@ class CreateStockState extends Equatable {
 }
 
 // Bloc
+@injectable
 class CreateStockBloc extends Bloc<CreateStockEvent, CreateStockState> {
-  final FirebaseFirestore _firestore;
+  final AddIngredientUseCase _addIngredientUseCase;
+  final GetIngredientsUseCase _getIngredientsUseCase;
+  final UpdateAllMenuStocksUseCase _updateAllMenuStocksUseCase;
 
-  CreateStockBloc({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance,
-        super(const CreateStockState()) {
+  CreateStockBloc(
+    this._addIngredientUseCase,
+    this._getIngredientsUseCase,
+    this._updateAllMenuStocksUseCase,
+  ) : super(const CreateStockState()) {
     on<PickImageEvent>((event, emit) {
       emit(state.copyWith(imagePath: event.imagePath, error: null));
     });
@@ -115,52 +120,25 @@ class CreateStockBloc extends Bloc<CreateStockEvent, CreateStockState> {
       }
       emit(state.copyWith(isLoading: true, error: null));
       try {
-        // Kompresi gambar terlebih dahulu
-        final compressedFile = await _compressImage(state.imagePath!);
-        if (compressedFile == null) {
-          emit(
-            state.copyWith(
-              isLoading: false,
-              error: 'Gagal mengkompresi gambar',
-            ),
-          );
-          return;
-        }
+        // Tambahkan bahan baru
+        await _addIngredientUseCase(
+          name: state.name,
+          stockAmount: int.tryParse(state.amount) ?? 0,
+          imageFile: File(state.imagePath!),
+        );
 
-        // Upload ke Supabase Storage
-        final imageUrl = await _uploadImageToSupabase(compressedFile.path);
-        if (imageUrl == null) {
-          emit(
-            state.copyWith(
-              isLoading: false,
-              error: 'Gagal upload gambar ke Supabase Storage',
-            ),
-          );
-          return;
-        }
+        // Update stok semua menu yang mungkin menggunakan bahan ini
+        final ingredients = await _getIngredientsUseCase();
+        final updatedCount = await _updateAllMenuStocksUseCase(
+          availableIngredients: ingredients,
+        );
 
-        // Simpan ke Firestore
-        await _firestore.collection('ingredients').add({
-          'name': state.name,
-          'stock_amount': int.tryParse(state.amount) ?? 0,
-          'image_url': imageUrl,
-          'created_at': DateTime.now(),
-        });
+        debugPrint('Berhasil memperbarui stok $updatedCount menu');
 
         emit(state.copyWith(isLoading: false, isSuccess: true));
       } catch (e) {
         emit(state.copyWith(isLoading: false, error: 'Terjadi kesalahan: $e'));
       }
     });
-  }
-
-  Future<File?> _compressImage(String path) async {
-    final file = File(path);
-    return await ImageCompressor.compressImage(file);
-  }
-
-  Future<String?> _uploadImageToSupabase(String path) async {
-    final file = File(path);
-    return await SupabaseStorageService.uploadFile(file);
   }
 }

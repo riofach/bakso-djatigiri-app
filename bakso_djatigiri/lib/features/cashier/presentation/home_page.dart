@@ -127,11 +127,10 @@ class _HomePageState extends State<HomePage> {
           // List Menu
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance
-                      .collection('menus')
-                      .orderBy('created_at', descending: false)
-                      .snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('menus')
+                  .orderBy('created_at', descending: false)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -139,36 +138,34 @@ class _HomePageState extends State<HomePage> {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text('Belum ada menu'));
                 }
-                final allMenus =
-                    snapshot.data!.docs
-                        .map(
-                          (doc) => MenuModel.fromMap(
-                            doc.data() as Map<String, dynamic>,
-                            doc.id,
-                          ),
-                        )
-                        .toList();
-                final menus =
-                    _search.isEmpty
-                        ? allMenus
-                        : allMenus
-                            .where(
-                              (m) => m.name.toLowerCase().contains(
+                final allMenus = snapshot.data!.docs
+                    .map(
+                      (doc) => MenuModel.fromMap(
+                        doc.data() as Map<String, dynamic>,
+                        doc.id,
+                      ),
+                    )
+                    .toList();
+                final menus = _search.isEmpty
+                    ? allMenus
+                    : allMenus
+                        .where(
+                          (m) => m.name.toLowerCase().contains(
                                 _search.toLowerCase(),
                               ),
-                            )
-                            .toList();
+                        )
+                        .toList();
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: GridView.builder(
                     itemCount: menus.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.75,
-                        ),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.75,
+                    ),
                     itemBuilder: (context, i) {
                       final menu = menus[i];
                       return Container(
@@ -196,12 +193,11 @@ class _HomePageState extends State<HomePage> {
                                 height: 90,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                errorBuilder:
-                                    (c, e, s) => Container(
-                                      height: 90,
-                                      color: gray600,
-                                      child: Icon(Icons.image, color: gray900),
-                                    ),
+                                errorBuilder: (c, e, s) => Container(
+                                  height: 90,
+                                  color: gray600,
+                                  child: Icon(Icons.image, color: gray900),
+                                ),
                               ),
                             ),
                             Padding(
@@ -261,6 +257,14 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: CustomNavBar(
         currentIndex: _selectedIndex,
         items: navBarItems,
+        onTap: (index) {
+          if (index != _selectedIndex) {
+            Navigator.pushReplacementNamed(
+              context,
+              navBarItems[index].route,
+            );
+          }
+        },
       ),
     );
   }
