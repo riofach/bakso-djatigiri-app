@@ -8,6 +8,7 @@ import '../../../core/widgets/custom_navbar.dart';
 import '../bloc/menu_bloc.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import 'package:mie_bakso_djatigiri/features/menu/presentation/create_menu.dart';
+import 'package:mie_bakso_djatigiri/features/menu/presentation/edit_menu.dart';
 
 class PageMenu extends StatelessWidget {
   const PageMenu({super.key});
@@ -261,104 +262,111 @@ class _PageMenuViewState extends State<_PageMenuView> {
   }
 
   Widget _buildMenuCard(MenuModel menu) {
-    return Container(
-      decoration: BoxDecoration(
-        color: white900,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color.fromARGB(255, 241, 241, 241)),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          Container(
-            height: 132,
-            decoration: BoxDecoration(
-              color: gray600,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: menu.imageUrl.isNotEmpty &&
-                    Uri.parse(menu.imageUrl).isAbsolute &&
-                    (menu.imageUrl.startsWith('http://') ||
-                        menu.imageUrl.startsWith('https://'))
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      menu.imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 132,
-                      errorBuilder: (c, e, s) => _buildImagePlaceholder(),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                : _buildImagePlaceholder(),
-          ),
-          const SizedBox(height: 8),
-          // Menu Name
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              menu.name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'Poppins',
-                color: dark900,
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          FadeInPageRoute(page: EditMenuPage(id: menu.id)),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: white900,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color.fromARGB(255, 241, 241, 241)),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            Container(
+              height: 132,
+              decoration: BoxDecoration(
+                color: gray600,
+                borderRadius: BorderRadius.circular(8),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              child: menu.imageUrl.isNotEmpty &&
+                      Uri.parse(menu.imageUrl).isAbsolute &&
+                      (menu.imageUrl.startsWith('http://') ||
+                          menu.imageUrl.startsWith('https://'))
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        menu.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 132,
+                        errorBuilder: (c, e, s) => _buildImagePlaceholder(),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : _buildImagePlaceholder(),
             ),
-          ),
-          const SizedBox(height: 4),
-          // Stock
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.local_fire_department,
-                  color: primary950,
-                  size: 13,
+            const SizedBox(height: 8),
+            // Menu Name
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                menu.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Poppins',
+                  color: dark900,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'Stock: ${menu.stock}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'Poppins',
-                    color: gray950,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Stock
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.local_fire_department,
+                    color: primary950,
+                    size: 13,
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Price
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              _currencyFormat.format(menu.price),
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'Poppins',
-                color: dark900,
+                  const SizedBox(width: 4),
+                  Text(
+                    'Stock: ${menu.stock}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Poppins',
+                      color: gray950,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            // Price
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                _currencyFormat.format(menu.price),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Poppins',
+                  color: dark900,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

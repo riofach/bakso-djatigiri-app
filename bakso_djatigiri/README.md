@@ -32,8 +32,13 @@ lib/
     │   ├── data/               # Data layer (model, repository impl, data source)
     │   ├── domain/             # Domain layer (entity, repository interface, use case)
     │   └── presentation/       # UI layer (pages, widgets)
-    └── stock/                  # Fitur manajemen stock
-        ├── bloc/               # State management untuk stock
+    ├── stock/                  # Fitur manajemen stock
+    │   ├── bloc/               # State management untuk stock
+    │   ├── data/               # Data layer
+    │   ├── domain/             # Domain layer
+    │   └── presentation/       # UI layer
+    └── menu/                   # Fitur manajemen menu
+        ├── bloc/               # State management untuk menu
         ├── data/               # Data layer
         ├── domain/             # Domain layer
         └── presentation/       # UI layer
@@ -83,3 +88,29 @@ Layer ini berisi UI dan state management.
 3. **Maintainability**: Kode lebih mudah dipelihara dan dikembangkan.
 4. **Scalability**: Mudah menambahkan fitur baru tanpa mengubah kode yang sudah ada.
 5. **Framework Independence**: Domain layer tidak bergantung pada framework eksternal.
+
+## Fitur Aplikasi
+
+### Autentikasi
+
+- Login dengan email dan password
+- Register untuk akun baru
+- Validasi form dan penanganan error
+
+### Manajemen Stock
+
+- Lihat daftar bahan (stok)
+- Tambah bahan baru dengan gambar dari galeri
+- Edit bahan (nama, jumlah, gambar)
+- Hapus bahan dengan konfirmasi
+
+### Manajemen Menu
+
+- Lihat daftar menu dalam bentuk grid
+- Tambah menu baru dengan:
+  - Gambar dari galeri
+  - Nama dan harga
+  - Pemilihan bahan yang dibutuhkan
+  - Perhitungan stok otomatis berdasarkan ketersediaan bahan
+- Edit menu (nama, harga, gambar)
+- Hapus menu dengan konfirmasi

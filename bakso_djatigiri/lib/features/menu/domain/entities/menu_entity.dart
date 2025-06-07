@@ -1,4 +1,6 @@
-// Entity class untuk menu (domain layer)
+// Entity model untuk menu
+// File ini berisi definisi Menu Entity
+
 import 'package:equatable/equatable.dart';
 
 class MenuEntity extends Equatable {

@@ -19,10 +19,17 @@ import '../features/menu/data/datasources/menu_data_source.dart';
 import '../features/menu/data/repositories/menu_repository_impl.dart';
 import '../features/menu/domain/repositories/menu_repository.dart';
 import '../features/menu/domain/usecases/add_menu_usecase.dart';
-import '../features/menu/domain/usecases/get_ingredients_usecase.dart';
+import '../features/menu/domain/usecases/get_ingredients_for_menu_usecase.dart';
 import '../features/menu/domain/usecases/calculate_menu_stock_usecase.dart';
 import '../features/menu/domain/usecases/update_menu_stock_usecase.dart';
 import '../features/menu/domain/usecases/update_all_menu_stocks_usecase.dart';
+import '../features/menu/domain/usecases/get_menu_usecase.dart';
+import '../features/menu/domain/usecases/update_menu_usecase.dart';
+import '../features/menu/domain/usecases/delete_menu_usecase.dart';
+import '../features/menu/domain/usecases/get_menu_requirements_usecase.dart';
+import '../features/menu/domain/usecases/update_menu_requirements_usecase.dart';
+import '../features/menu/bloc/edit_menu_bloc.dart';
+import '../features/menu/bloc/delete_menu_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -119,5 +126,35 @@ void setupDependencies() {
       getIt<GetIngredientsForMenuUseCase>(),
       getIt<CalculateMenuStockUseCase>(),
     ),
+  );
+
+  // Edit Menu
+  getIt.registerFactory<GetMenuUseCase>(
+    () => GetMenuUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerFactory<UpdateMenuUseCase>(
+    () => UpdateMenuUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerFactory<DeleteMenuUseCase>(
+    () => DeleteMenuUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerFactory<GetMenuRequirementsUseCase>(
+    () => GetMenuRequirementsUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerFactory<UpdateMenuRequirementsUseCase>(
+    () => UpdateMenuRequirementsUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerFactory<EditMenuBloc>(
+    () => EditMenuBloc(
+      getIt<GetMenuUseCase>(),
+      getIt<UpdateMenuUseCase>(),
+      getIt<GetMenuRequirementsUseCase>(),
+      getIt<GetIngredientsForMenuUseCase>(),
+      getIt<UpdateMenuRequirementsUseCase>(),
+      getIt<DeleteMenuUseCase>(),
+    ),
+  );
+  getIt.registerFactory<DeleteMenuBloc>(
+    () => DeleteMenuBloc(getIt<DeleteMenuUseCase>()),
   );
 }

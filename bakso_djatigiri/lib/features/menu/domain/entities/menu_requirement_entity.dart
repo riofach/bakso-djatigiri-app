@@ -19,4 +19,21 @@ class MenuRequirementEntity extends Equatable {
   @override
   List<Object?> get props =>
       [id, menuId, ingredientId, ingredientName, requiredAmount];
+
+  // Metode untuk membuat salinan objek dengan nilai yang diperbarui
+  MenuRequirementEntity copyWith({
+    String? id,
+    String? menuId,
+    String? ingredientId,
+    String? ingredientName,
+    int? requiredAmount,
+  }) {
+    return MenuRequirementEntity(
+      id: id ?? this.id,
+      menuId: menuId ?? this.menuId,
+      ingredientId: ingredientId ?? this.ingredientId,
+      ingredientName: ingredientName ?? this.ingredientName,
+      requiredAmount: requiredAmount ?? this.requiredAmount,
+    );
+  }
 }

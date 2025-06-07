@@ -4,10 +4,10 @@ import '../../../stock/domain/entities/ingredient_entity.dart';
 import '../../../stock/domain/repositories/stock_repository.dart';
 
 @injectable
-class GetIngredientsForMenuUseCase {
+class GetIngredientsUseCase {
   final StockRepository repository;
 
-  GetIngredientsForMenuUseCase(this.repository);
+  GetIngredientsUseCase(this.repository);
 
   Future<List<IngredientEntity>> call() async {
     return await repository.getIngredients();

@@ -9,7 +9,7 @@ import '../../../features/stock/domain/entities/ingredient_entity.dart';
 import '../domain/entities/menu_requirement_entity.dart';
 import '../domain/usecases/add_menu_usecase.dart';
 import '../domain/usecases/calculate_menu_stock_usecase.dart';
-import '../domain/usecases/get_ingredients_usecase.dart';
+import '../domain/usecases/get_ingredients_for_menu_usecase.dart';
 
 // Event
 abstract class CreateMenuEvent extends Equatable {
