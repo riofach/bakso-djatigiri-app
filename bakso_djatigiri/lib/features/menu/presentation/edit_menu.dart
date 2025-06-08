@@ -152,29 +152,32 @@ class _EditMenuViewState extends State<_EditMenuView> {
           body: state.isLoading && state.name.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 21),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Upload Image
-                        GestureDetector(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Upload Image
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: GestureDetector(
                           onTap: state.isLoading
                               ? null
                               : () => _pickImage(context),
                           child: Container(
                             height: 207,
+                            width: double.infinity,
                             decoration: BoxDecoration(
                               color: gray600,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: _buildImageWidget(state),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        // Nama Menu
-                        Container(
+                      ),
+
+                      // Nama Menu
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: white900,
@@ -197,9 +200,12 @@ class _EditMenuViewState extends State<_EditMenuView> {
                             ),
                           ),
                         ),
-                        // Harga Menu
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 24),
+                      ),
+                      // Harga Menu
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: white900,
                             borderRadius: BorderRadius.circular(24),
@@ -241,158 +247,179 @@ class _EditMenuViewState extends State<_EditMenuView> {
                             ),
                           ),
                         ),
+                      ),
 
-                        // Ingredients Section - Selalu ditampilkan
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
-                          margin: const EdgeInsets.only(bottom: 8),
+                      // Ingredients Section - Selalu ditampilkan
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Edit Menu & Stock Bahan',
+                                  style: TextStyle(
+                                    color: dark900,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                // Circular gradient button
+                                GestureDetector(
+                                  onTap: () =>
+                                      _openIngredientSelector(context, state),
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      gradient: vertical01,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add,
+                                      color: white900,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Tambahkan bahan - bahan yang dipakai \nuntuk membuat menu, sehingga stock menu otomatis terbuat',
+                              style: TextStyle(
+                                color: gray800,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Selected Ingredients List
+                      if (state.isLoadingIngredients)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (state.selectedRequirements.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Text(
+                              'Belum ada bahan yang dipilih',
+                              style: TextStyle(
+                                color: gray900,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: state.selectedRequirements.map((req) {
+                              return _buildIngredientCard(context, req);
+                            }).toList(),
+                          ),
+                        ),
+
+                      // Stok Info
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: gray600.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: gray600.withOpacity(0.5)),
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'Edit Menu & Stock Bahan',
-                                    style: TextStyle(
+                                  const Icon(Icons.inventory_2_outlined,
+                                      size: 18, color: secondary950),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Stock: ${state.stock}',
+                                    style: const TextStyle(
                                       color: dark900,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                    ),
-                                  ),
-                                  // Circular gradient button
-                                  GestureDetector(
-                                    onTap: () =>
-                                        _openIngredientSelector(context, state),
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        gradient: vertical01,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.add,
-                                        color: white900,
-                                        size: 20,
-                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 8),
                               const Text(
-                                'Tambahkan bahan - bahan yang dipakai \nuntuk membuat menu, sehingga stock menu otomatis terbuat',
+                                'Stock menu dihitung otomatis berdasarkan ketersediaan bahan',
                                 style: TextStyle(
                                   color: gray800,
-                                  fontSize: 10,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      ),
 
-                        // Selected Ingredients List
-                        if (state.isLoadingIngredients)
-                          const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
-                        else if (state.selectedRequirements.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Text(
-                                'Belum ada bahan yang dipilih',
-                                style: TextStyle(
-                                  color: gray900,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                      // Tombol Update (dipindahkan ke bagian paling bawah)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                              backgroundColor: null,
+                              foregroundColor: white900,
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ).copyWith(
+                              // ignore: deprecated_member_use
+                              backgroundColor: MaterialStateProperty.all(
+                                Colors.transparent,
+                              ),
+                              // ignore: deprecated_member_use
+                              shadowColor: MaterialStateProperty.all(
+                                Colors.transparent,
                               ),
                             ),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Bahan yang Digunakan:',
-                                  style: TextStyle(
-                                    color: dark900,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                ...state.selectedRequirements.map((req) {
-                                  return _buildIngredientCard(context, req);
-                                }).toList(),
-                              ],
-                            ),
-                          ),
-
-                        // Spacer untuk memastikan tombol di bawah
-                        const SizedBox(height: 24),
-
-                        // Tombol Update (dipindahkan ke bagian paling bawah)
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                elevation: 0,
-                                backgroundColor: null,
-                                foregroundColor: white900,
-                                textStyle: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ).copyWith(
-                                // ignore: deprecated_member_use
-                                backgroundColor: MaterialStateProperty.all(
-                                  Colors.transparent,
-                                ),
-                                // ignore: deprecated_member_use
-                                shadowColor: MaterialStateProperty.all(
-                                  Colors.transparent,
-                                ),
+                            onPressed:
+                                state.isLoading ? null : () => _update(context),
+                            child: Ink(
+                              decoration: BoxDecoration(
+                                gradient: horizontal01,
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              onPressed: state.isLoading
-                                  ? null
-                                  : () => _update(context),
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  gradient: vertical01,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  height: 48,
-                                  child: state.isLoading
-                                      ? const CircularProgressIndicator(
-                                          color: white900,
-                                        )
-                                      : const Text('Update Menu Product'),
-                                ),
+                              child: Container(
+                                alignment: Alignment.center,
+                                height: 50,
+                                child: state.isLoading
+                                    ? const CircularProgressIndicator(
+                                        color: white900,
+                                      )
+                                    : const Text('Update Menu Product'),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
         );
@@ -587,62 +614,100 @@ class _EditMenuViewState extends State<_EditMenuView> {
               ),
             ),
           ),
-          Text(
-            '${req.requiredAmount}',
-            style: const TextStyle(
-              color: dark900,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          // Container untuk tombol - angka +
+          Container(
+            height: 30,
+            decoration: BoxDecoration(
+              color: gray600.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Decrease button
+                GestureDetector(
+                  onTap: () {
+                    if (req.requiredAmount > 1) {
+                      context.read<EditMenuBloc>().add(
+                            UpdateIngredientAmountEvent(
+                              ingredientId: req.ingredientId,
+                              newAmount: req.requiredAmount - 1,
+                            ),
+                          );
+                    }
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: white900,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.remove,
+                      color: primary950,
+                      size: 14,
+                    ),
+                  ),
+                ),
+                // Angka jumlah
+                Container(
+                  width: 40,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${req.requiredAmount}',
+                    style: const TextStyle(
+                      color: dark900,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                // Increase button
+                GestureDetector(
+                  onTap: () {
+                    context.read<EditMenuBloc>().add(
+                          UpdateIngredientAmountEvent(
+                            ingredientId: req.ingredientId,
+                            newAmount: req.requiredAmount + 1,
+                          ),
+                        );
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: white900,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: secondary950,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),
-          // Decrease button
-          GestureDetector(
-            onTap: () {
-              if (req.requiredAmount > 1) {
-                context.read<EditMenuBloc>().add(
-                      UpdateIngredientAmountEvent(
-                        ingredientId: req.ingredientId,
-                        newAmount: req.requiredAmount - 1,
-                      ),
-                    );
-              }
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: white900,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.remove,
-                color: primary950,
-                size: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Increase button
+          // Delete button
           GestureDetector(
             onTap: () {
               context.read<EditMenuBloc>().add(
-                    UpdateIngredientAmountEvent(
-                      ingredientId: req.ingredientId,
-                      newAmount: req.requiredAmount + 1,
-                    ),
+                    RemoveIngredientRequirementEvent(req.ingredientId),
                   );
             },
             child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: white900,
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: errorColor.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.add,
-                color: secondary950,
+                Icons.close,
+                color: errorColor,
                 size: 14,
               ),
             ),
@@ -786,68 +851,108 @@ class _IngredientSelectorBottomSheet extends StatelessWidget {
                           ),
                         ),
                         if (isSelected) ...[
-                          Text(
-                            '$amount',
-                            style: const TextStyle(
-                              color: dark900,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                          // Container untuk tombol - angka +
+                          Container(
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: gray600.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Decrease button
+                                GestureDetector(
+                                  onTap: () {
+                                    if (amount <= 1) {
+                                      context.read<EditMenuBloc>().add(
+                                            RemoveIngredientRequirementEvent(
+                                              ingredient.id,
+                                            ),
+                                          );
+                                    } else {
+                                      context.read<EditMenuBloc>().add(
+                                            UpdateIngredientAmountEvent(
+                                              ingredientId: ingredient.id,
+                                              newAmount: amount - 1,
+                                            ),
+                                          );
+                                    }
+                                  },
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: const BoxDecoration(
+                                      color: white900,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.remove,
+                                      color: primary950,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                                // Angka jumlah
+                                Container(
+                                  width: 40,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$amount',
+                                    style: const TextStyle(
+                                      color: dark900,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                // Increase button
+                                GestureDetector(
+                                  onTap: () {
+                                    context.read<EditMenuBloc>().add(
+                                          UpdateIngredientAmountEvent(
+                                            ingredientId: ingredient.id,
+                                            newAmount: amount + 1,
+                                          ),
+                                        );
+                                  },
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: const BoxDecoration(
+                                      color: white900,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add,
+                                      color: secondary950,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 10),
-                          // Decrease button
-                          GestureDetector(
-                            onTap: () {
-                              if (amount <= 1) {
-                                context.read<EditMenuBloc>().add(
-                                      RemoveIngredientRequirementEvent(
-                                        ingredient.id,
-                                      ),
-                                    );
-                              } else {
-                                context.read<EditMenuBloc>().add(
-                                      UpdateIngredientAmountEvent(
-                                        ingredientId: ingredient.id,
-                                        newAmount: amount - 1,
-                                      ),
-                                    );
-                              }
-                            },
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: const BoxDecoration(
-                                color: white900,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.remove,
-                                color: primary950,
-                                size: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          // Increase button
+                          // Delete button
                           GestureDetector(
                             onTap: () {
                               context.read<EditMenuBloc>().add(
-                                    UpdateIngredientAmountEvent(
-                                      ingredientId: ingredient.id,
-                                      newAmount: amount + 1,
+                                    RemoveIngredientRequirementEvent(
+                                      ingredient.id,
                                     ),
                                   );
                             },
                             child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: const BoxDecoration(
-                                color: white900,
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: errorColor.withOpacity(0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.add,
-                                color: secondary950,
+                                Icons.close,
+                                color: errorColor,
                                 size: 14,
                               ),
                             ),
@@ -865,8 +970,8 @@ class _IngredientSelectorBottomSheet extends StatelessWidget {
                                   );
                             },
                             child: Container(
-                              width: 24,
-                              height: 24,
+                              width: 30,
+                              height: 30,
                               decoration: const BoxDecoration(
                                 color: white900,
                                 shape: BoxShape.circle,

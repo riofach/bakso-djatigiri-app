@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
@@ -17,6 +18,7 @@ import '../domain/usecases/get_menu_requirements_usecase.dart';
 import '../domain/usecases/get_ingredients_for_menu_usecase.dart';
 import '../domain/usecases/update_menu_requirements_usecase.dart';
 import '../domain/usecases/delete_menu_usecase.dart';
+import '../domain/usecases/update_menu_stock_usecase.dart';
 import '../../../config/supabase_storage.dart';
 import '../../../core/utils/image_compressor.dart';
 import '../../../core/utils/storage_helper.dart';
@@ -194,6 +196,7 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
   final GetIngredientsForMenuUseCase _getIngredientsUseCase;
   final UpdateMenuRequirementsUseCase _updateMenuRequirementsUseCase;
   final DeleteMenuUseCase _deleteMenuUseCase;
+  final UpdateMenuStockUseCase _updateMenuStockUseCase;
 
   EditMenuBloc(
     this._getMenuUseCase,
@@ -202,6 +205,7 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
     this._getIngredientsUseCase,
     this._updateMenuRequirementsUseCase,
     this._deleteMenuUseCase,
+    this._updateMenuStockUseCase,
   ) : super(const EditMenuState()) {
     on<LoadMenuEvent>(_onLoadMenu);
     on<LoadMenuRequirementsEvent>(_onLoadMenuRequirements);
@@ -310,7 +314,16 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
       debugPrint(
           'Total requirements after adding: ${updatedRequirements.length}');
 
-      emit(state.copyWith(selectedRequirements: updatedRequirements));
+      // Hitung stock baru dan update state
+      final newStock = await _calculateAndUpdateStock(
+        updatedRequirements,
+        state.availableIngredients,
+      );
+
+      emit(state.copyWith(
+        selectedRequirements: updatedRequirements,
+        stock: newStock,
+      ));
     } catch (e) {
       debugPrint('Error adding ingredient requirement: $e');
       emit(state.copyWith(error: 'Gagal menambahkan bahan: $e'));
@@ -333,7 +346,16 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
       debugPrint(
           'Total requirements after removing: ${updatedRequirements.length}');
 
-      emit(state.copyWith(selectedRequirements: updatedRequirements));
+      // Hitung stock baru dan update state
+      final newStock = await _calculateAndUpdateStock(
+        updatedRequirements,
+        state.availableIngredients,
+      );
+
+      emit(state.copyWith(
+        selectedRequirements: updatedRequirements,
+        stock: newStock,
+      ));
     } catch (e) {
       debugPrint('Error removing ingredient requirement: $e');
       emit(state.copyWith(error: 'Gagal menghapus bahan: $e'));
@@ -359,10 +381,76 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
       debugPrint(
           'Total requirements after updating: ${updatedRequirements.length}');
 
-      emit(state.copyWith(selectedRequirements: updatedRequirements));
+      // Hitung stock baru dan update state
+      final newStock = await _calculateAndUpdateStock(
+        updatedRequirements,
+        state.availableIngredients,
+      );
+
+      emit(state.copyWith(
+        selectedRequirements: updatedRequirements,
+        stock: newStock,
+      ));
     } catch (e) {
       debugPrint('Error updating ingredient amount: $e');
       emit(state.copyWith(error: 'Gagal mengubah jumlah bahan: $e'));
+    }
+  }
+
+  Future<int> _calculateAndUpdateStock(
+    List<MenuRequirementEntity> requirements,
+    List<IngredientEntity> ingredients,
+  ) async {
+    try {
+      // Gunakan UpdateMenuStockUseCase untuk menghitung stock
+      // Tapi ini hanya simulasi untuk UI, belum disimpan ke database
+      if (state.id.isEmpty || requirements.isEmpty) return 0;
+
+      // Hanya untuk menghitung stock baru tanpa mengupdate ke Firestore
+      final calculatedStock = await compute(
+        (Map<String, dynamic> data) {
+          final reqs = data['requirements'] as List<MenuRequirementEntity>;
+          final ingrs = data['ingredients'] as List<IngredientEntity>;
+
+          // Logic menghitung stock dari CalculateMenuStockUseCase
+          if (reqs.isEmpty) return 0;
+
+          final ingredientMap = {
+            for (var ingredient in ingrs) ingredient.id: ingredient
+          };
+
+          List<int> possibleStocks = [];
+
+          for (var requirement in reqs) {
+            final ingredient = ingredientMap[requirement.ingredientId];
+
+            if (ingredient == null || ingredient.stockAmount <= 0) {
+              return 0;
+            }
+
+            final possibleStock =
+                ingredient.stockAmount ~/ requirement.requiredAmount;
+
+            if (possibleStock <= 0) {
+              return 0;
+            }
+
+            possibleStocks.add(possibleStock);
+          }
+
+          return possibleStocks
+              .reduce((min, stock) => stock < min ? stock : min);
+        },
+        {
+          'requirements': requirements,
+          'ingredients': ingredients,
+        },
+      );
+
+      return calculatedStock;
+    } catch (e) {
+      debugPrint('Error calculating stock: $e');
+      return 0;
     }
   }
 
@@ -412,6 +500,16 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
       );
 
       debugPrint('SubmitEdit: Menu requirements updated successfully');
+
+      // 3. Update menu stock berdasarkan requirements baru
+      debugPrint('SubmitEdit: Updating menu stock');
+      await _updateMenuStockUseCase(
+        menuId: state.id,
+        menuRequirements: state.selectedRequirements,
+        availableIngredients: state.availableIngredients,
+      );
+
+      debugPrint('SubmitEdit: Menu stock updated successfully');
 
       emit(state.copyWith(
         isLoading: false,

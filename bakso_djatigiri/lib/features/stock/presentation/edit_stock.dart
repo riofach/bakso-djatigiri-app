@@ -203,6 +203,33 @@ class _EditStockViewState extends State<_EditStockView> {
                             ),
                           ),
                         ),
+                        // Info
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: gray600.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: gray800.withOpacity(0.1)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  color: primary950, size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Stock bahan akan otomatis digunakan saat menu yang berkaitan dijual',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: dark900,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         // Tombol Update
                         SizedBox(
                           width: double.infinity,

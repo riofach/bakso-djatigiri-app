@@ -31,6 +31,9 @@ import '../features/menu/domain/usecases/update_menu_requirements_usecase.dart';
 import '../features/menu/bloc/edit_menu_bloc.dart';
 import '../features/menu/bloc/delete_menu_bloc.dart';
 
+// Import untuk fitur kasir
+import '../features/cashier/bloc/cashier_bloc.dart';
+
 final GetIt getIt = GetIt.instance;
 
 void setupDependencies() {
@@ -82,8 +85,8 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<UpdateMenuStockUseCase>(
     () => UpdateMenuStockUseCase(
-      getIt<MenuRepository>(),
-      getIt<CalculateMenuStockUseCase>(),
+      menuRepository: getIt<MenuRepository>(),
+      calculateMenuStockUseCase: getIt<CalculateMenuStockUseCase>(),
     ),
   );
   getIt.registerLazySingleton<UpdateAllMenuStocksUseCase>(
@@ -152,9 +155,15 @@ void setupDependencies() {
       getIt<GetIngredientsForMenuUseCase>(),
       getIt<UpdateMenuRequirementsUseCase>(),
       getIt<DeleteMenuUseCase>(),
+      getIt<UpdateMenuStockUseCase>(),
     ),
   );
   getIt.registerFactory<DeleteMenuBloc>(
     () => DeleteMenuBloc(getIt<DeleteMenuUseCase>()),
+  );
+
+  // Cashier BLoCs
+  getIt.registerFactory<CashierBloc>(
+    () => CashierBloc(),
   );
 }

@@ -1,52 +1,43 @@
-// Halaman Home - List Menu
-// Mengambil data dari Firestore collection 'menus' dan search bar
+// Halaman Home (Kasir) - Menampilkan daftar menu yang tersedia untuk dijual
+// Mengikuti desain Figma Bakso Djatigiri
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:get_it/get_it.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
+import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
+import '../../menu/domain/entities/menu_entity.dart';
+import '../bloc/cashier_bloc.dart';
 
-class MenuModel {
-  final String id;
-  final String name;
-  final int price;
-  final int stock;
-  final String imageUrl;
-  final DateTime createdAt;
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
-  MenuModel({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.stock,
-    required this.imageUrl,
-    required this.createdAt,
-  });
-
-  factory MenuModel.fromMap(Map<String, dynamic> map, String id) {
-    return MenuModel(
-      id: id,
-      name: map['name'] ?? '',
-      price: map['price'] ?? 0,
-      stock: map['stock'] ?? 0,
-      imageUrl: map['image_url'] ?? '',
-      createdAt: (map['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => GetIt.instance<CashierBloc>()..add(LoadMenusEvent()),
+      child: const _HomePageView(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class _HomePageView extends StatefulWidget {
+  const _HomePageView();
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<_HomePageView> createState() => _HomePageViewState();
 }
 
-class _HomePageState extends State<HomePage> {
-  String _search = '';
-  // ignore: prefer_final_fields
-  int _selectedIndex = 2; // Home di tengah
+class _HomePageViewState extends State<_HomePageView> {
+  final int _selectedIndex = 2; // Home di index ke-2
+  final TextEditingController _searchController = TextEditingController();
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
-  // Definisi global navBarItems
   final navBarItems = [
     CustomNavBarItem(
       icon: Icons.bar_chart,
@@ -54,10 +45,16 @@ class _HomePageState extends State<HomePage> {
       route: '/history',
     ),
     CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
-    CustomNavBarItem(icon: Icons.description, label: 'Home', route: '/home'),
+    CustomNavBarItem(icon: Icons.home, label: 'Home', route: '/home'),
     CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
     CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
   ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,193 +63,246 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: backgroundColor,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.notifications_none, color: dark900),
-          onPressed: () {
-            // TODO: Notifikasi
-          },
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: GestureDetector(
+            onTap: () {
+              // TODO: Navigate to notifications page
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: white900,
+                borderRadius: BorderRadius.all(Radius.circular(100)),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.notifications_outlined,
+                  color: dark900,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
         ),
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: const [
-            Text('Welcome', style: TextStyle(fontSize: 14, color: gray950)),
+            Text(
+              'Welcome',
+              style: TextStyle(
+                color: gray900,
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+              ),
+            ),
             Text(
               'Bakso Djatigiri',
               style: TextStyle(
-                fontSize: 18,
                 color: dark900,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
               ),
             ),
           ],
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_cart_outlined, color: dark900),
-            onPressed: () {
-              // TODO: Cart
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search Bar
+          // Tombol Cart di pojok kanan atas
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: white900,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                onChanged: (val) => setState(() => _search = val),
-                decoration: const InputDecoration(
-                  hintText: 'Search',
-                  prefixIcon: Icon(Icons.search, color: gray950),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                ),
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                // TODO: Navigate to cart page
+              },
+              child: BlocBuilder<CashierBloc, CashierState>(
+                builder: (context, state) {
+                  int cartItemCount = 0;
+                  if (state is CashierLoaded) {
+                    cartItemCount = state.cartItems.length;
+                  }
+
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: const BoxDecoration(
+                          color: white900,
+                          borderRadius: BorderRadius.all(Radius.circular(100)),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.shopping_cart_outlined,
+                            color: dark900,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      if (cartItemCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: primary950,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Center(
+                              child: Text(
+                                cartItemCount > 9 ? '9+' : '$cartItemCount',
+                                style: const TextStyle(
+                                  color: white900,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
-          // List Menu
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('menus')
-                  .orderBy('created_at', descending: false)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('Belum ada menu'));
-                }
-                final allMenus = snapshot.data!.docs
-                    .map(
-                      (doc) => MenuModel.fromMap(
-                        doc.data() as Map<String, dynamic>,
-                        doc.id,
-                      ),
-                    )
-                    .toList();
-                final menus = _search.isEmpty
-                    ? allMenus
-                    : allMenus
-                        .where(
-                          (m) => m.name.toLowerCase().contains(
-                                _search.toLowerCase(),
-                              ),
-                        )
-                        .toList();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: GridView.builder(
-                    itemCount: menus.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.75,
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: white900,
+                  borderRadius: BorderRadius.circular(360),
+                  border: Border.all(color: gray700),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
                     ),
-                    itemBuilder: (context, i) {
-                      final menu = menus[i];
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: white900,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    context.read<CashierBloc>().add(SearchMenusEvent(value));
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Search',
+                    hintStyle: TextStyle(
+                      color: gray950,
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(Icons.search, color: dark900),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ),
+
+            // List Menu Title
+            const Padding(
+              padding: EdgeInsets.only(left: 16, top: 8, bottom: 16),
+              child: Text(
+                'List Menu',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  color: dark900,
+                ),
+              ),
+            ),
+
+            // Menu Grid
+            Expanded(
+              child: BlocBuilder<CashierBloc, CashierState>(
+                builder: (context, state) {
+                  if (state is CashierLoading) {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(primary950),
+                    ));
+                  }
+
+                  if (state is CashierError) {
+                    return Center(
+                      child: Text(
+                        state.message,
+                        style: const TextStyle(color: errorColor),
+                      ),
+                    );
+                  }
+
+                  if (state is CashierLoaded) {
+                    final menus = state.filteredMenus;
+
+                    if (menus.isEmpty) {
+                      return Center(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
-                              child: Image.network(
-                                menu.imageUrl,
-                                height: 90,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => Container(
-                                  height: 90,
-                                  color: gray600,
-                                  child: Icon(Icons.image, color: gray900),
-                                ),
-                              ),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: gray800,
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    menu.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: dark900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.local_fire_department,
-                                        color: errorColor,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Stock: ${menu.stock}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: errorColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Rp ${menu.price.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]}.")}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: primary950,
-                                    ),
-                                  ),
-                                ],
+                            SizedBox(height: 16),
+                            Text(
+                              'Tidak ada menu yang ditemukan',
+                              style: TextStyle(
+                                color: gray900,
+                                fontSize: 16,
                               ),
                             ),
                           ],
                         ),
                       );
-                    },
-                  ),
-                );
-              },
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 100),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.7,
+                        ),
+                        itemCount: menus.length,
+                        itemBuilder: (context, index) {
+                          final menu = menus[index];
+                          return _buildMenuCard(menu);
+                        },
+                      ),
+                    );
+                  }
+
+                  return const Center(
+                    child: Text('Tidak ada data menu'),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: CustomNavBar(
         currentIndex: _selectedIndex,
@@ -265,6 +315,171 @@ class _HomePageState extends State<HomePage> {
             );
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(MenuEntity menu) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Menambahkan menu ke keranjang
+        context.read<CashierBloc>().add(AddToCartEvent(menu));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: white900,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              spreadRadius: 1,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            Stack(
+              children: [
+                Container(
+                  height: 132,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: gray600,
+                  ),
+                  child: menu.imageUrl.isNotEmpty &&
+                          Uri.parse(menu.imageUrl).isAbsolute &&
+                          (menu.imageUrl.startsWith('http://') ||
+                              menu.imageUrl.startsWith('https://'))
+                      ? Image.network(
+                          menu.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 132,
+                          errorBuilder: (c, e, s) => _buildImagePlaceholder(),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    primary950),
+                              ),
+                            );
+                          },
+                        )
+                      : _buildImagePlaceholder(),
+                ),
+                // Add to cart button overlay
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: primary950,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.add,
+                        color: white900,
+                        size: 18,
+                      ),
+                      onPressed: () {
+                        context.read<CashierBloc>().add(AddToCartEvent(menu));
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Menu details
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Menu Name
+                  Text(
+                    menu.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                      color: dark900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Stock
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department,
+                        color: primary950,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Stock: ${menu.stock}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'Poppins',
+                          color: gray950,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Price
+                  Text(
+                    _currencyFormat.format(menu.price),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Poppins',
+                      color: primary950,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return SizedBox(
+      width: double.infinity,
+      height: 132,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.image, color: dark900, size: 32),
+          SizedBox(height: 4),
+          Text(
+            'Image placeholder',
+            style: TextStyle(
+              fontSize: 10,
+              fontFamily: 'Poppins',
+              color: dark900,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -129,4 +129,16 @@ class MenuRepositoryImpl implements MenuRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<void> updateMenuStock({
+    required String menuId,
+    required int stock,
+  }) async {
+    try {
+      await dataSource.updateMenuStock(menuId, stock);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

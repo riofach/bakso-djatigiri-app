@@ -30,6 +30,12 @@ abstract class MenuRepository {
     required List<MenuRequirementEntity> requirements,
   });
 
+  /// Mengupdate stock menu
+  Future<void> updateMenuStock({
+    required String menuId,
+    required int stock,
+  });
+
   /// Menghapus menu berdasarkan id
   Future<void> deleteMenu(String id);
 }
