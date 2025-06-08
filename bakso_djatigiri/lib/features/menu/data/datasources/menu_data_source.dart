@@ -19,6 +19,7 @@ abstract class MenuDataSource {
       String ingredientName, int requiredAmount);
   Future<void> updateMenu(
       String id, String name, int price, int stock, String imageUrl);
+  Future<void> updateMenuStock(String menuId, int stock);
   Future<void> deleteMenuRequirements(String menuId);
   Future<void> deleteMenu(String id);
 }
@@ -143,6 +144,19 @@ class MenuDataSourceImpl implements MenuDataSource {
     } catch (e) {
       debugPrint('Error updating menu: $e');
       throw Exception('Gagal mengupdate menu: $e');
+    }
+  }
+
+  @override
+  Future<void> updateMenuStock(String menuId, int stock) async {
+    try {
+      await _firestore.collection('menus').doc(menuId).update({
+        'stock': stock,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error updating menu stock: $e');
+      throw Exception('Gagal mengupdate stok menu: $e');
     }
   }
 

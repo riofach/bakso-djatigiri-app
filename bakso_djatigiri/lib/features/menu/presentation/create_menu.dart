@@ -375,62 +375,100 @@ class _CreateMenuViewState extends State<_CreateMenuView> {
               ),
             ),
           ),
-          Text(
-            '${req.requiredAmount}',
-            style: const TextStyle(
-              color: dark900,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          // Container untuk tombol - angka +
+          Container(
+            height: 30,
+            decoration: BoxDecoration(
+              color: gray600.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Decrease button
+                GestureDetector(
+                  onTap: () {
+                    if (req.requiredAmount > 1) {
+                      context.read<CreateMenuBloc>().add(
+                            UpdateIngredientAmountEvent(
+                              ingredientId: req.ingredientId,
+                              newAmount: req.requiredAmount - 1,
+                            ),
+                          );
+                    }
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: white900,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.remove,
+                      color: primary950,
+                      size: 14,
+                    ),
+                  ),
+                ),
+                // Angka jumlah
+                Container(
+                  width: 40,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${req.requiredAmount}',
+                    style: const TextStyle(
+                      color: dark900,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                // Increase button
+                GestureDetector(
+                  onTap: () {
+                    context.read<CreateMenuBloc>().add(
+                          UpdateIngredientAmountEvent(
+                            ingredientId: req.ingredientId,
+                            newAmount: req.requiredAmount + 1,
+                          ),
+                        );
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: white900,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: secondary950,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),
-          // Decrease button
-          GestureDetector(
-            onTap: () {
-              if (req.requiredAmount > 1) {
-                context.read<CreateMenuBloc>().add(
-                      UpdateIngredientAmountEvent(
-                        ingredientId: req.ingredientId,
-                        newAmount: req.requiredAmount - 1,
-                      ),
-                    );
-              }
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: white900,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.remove,
-                color: primary950,
-                size: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Increase button
+          // Delete button
           GestureDetector(
             onTap: () {
               context.read<CreateMenuBloc>().add(
-                    UpdateIngredientAmountEvent(
-                      ingredientId: req.ingredientId,
-                      newAmount: req.requiredAmount + 1,
-                    ),
+                    RemoveIngredientRequirementEvent(req.ingredientId),
                   );
             },
             child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: white900,
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: errorColor.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.add,
-                color: secondary950,
+                Icons.close,
+                color: errorColor,
                 size: 14,
               ),
             ),
@@ -532,68 +570,108 @@ class _IngredientSelectorBottomSheet extends StatelessWidget {
                             ),
                           ),
                           if (isSelected) ...[
-                            Text(
-                              '$amount',
-                              style: const TextStyle(
-                                color: dark900,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            // Container untuk tombol - angka +
+                            Container(
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: gray600.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Decrease button
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (amount <= 1) {
+                                        context.read<CreateMenuBloc>().add(
+                                              RemoveIngredientRequirementEvent(
+                                                ingredient.id,
+                                              ),
+                                            );
+                                      } else {
+                                        context.read<CreateMenuBloc>().add(
+                                              UpdateIngredientAmountEvent(
+                                                ingredientId: ingredient.id,
+                                                newAmount: amount - 1,
+                                              ),
+                                            );
+                                      }
+                                    },
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: const BoxDecoration(
+                                        color: white900,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.remove,
+                                        color: primary950,
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  // Angka jumlah
+                                  Container(
+                                    width: 40,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$amount',
+                                      style: const TextStyle(
+                                        color: dark900,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  // Increase button
+                                  GestureDetector(
+                                    onTap: () {
+                                      context.read<CreateMenuBloc>().add(
+                                            UpdateIngredientAmountEvent(
+                                              ingredientId: ingredient.id,
+                                              newAmount: amount + 1,
+                                            ),
+                                          );
+                                    },
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: const BoxDecoration(
+                                        color: white900,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.add,
+                                        color: secondary950,
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 10),
-                            // Decrease button
-                            GestureDetector(
-                              onTap: () {
-                                if (amount <= 1) {
-                                  context.read<CreateMenuBloc>().add(
-                                        RemoveIngredientRequirementEvent(
-                                          ingredient.id,
-                                        ),
-                                      );
-                                } else {
-                                  context.read<CreateMenuBloc>().add(
-                                        UpdateIngredientAmountEvent(
-                                          ingredientId: ingredient.id,
-                                          newAmount: amount - 1,
-                                        ),
-                                      );
-                                }
-                              },
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: white900,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.remove,
-                                  color: primary950,
-                                  size: 14,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            // Increase button
+                            // Delete button
                             GestureDetector(
                               onTap: () {
                                 context.read<CreateMenuBloc>().add(
-                                      UpdateIngredientAmountEvent(
-                                        ingredientId: ingredient.id,
-                                        newAmount: amount + 1,
+                                      RemoveIngredientRequirementEvent(
+                                        ingredient.id,
                                       ),
                                     );
                               },
                               child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: white900,
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: errorColor.withOpacity(0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
-                                  Icons.add,
-                                  color: secondary950,
+                                  Icons.close,
+                                  color: errorColor,
                                   size: 14,
                                 ),
                               ),
@@ -611,8 +689,8 @@ class _IngredientSelectorBottomSheet extends StatelessWidget {
                                     );
                               },
                               child: Container(
-                                width: 24,
-                                height: 24,
+                                width: 30,
+                                height: 30,
                                 decoration: const BoxDecoration(
                                   color: white900,
                                   shape: BoxShape.circle,

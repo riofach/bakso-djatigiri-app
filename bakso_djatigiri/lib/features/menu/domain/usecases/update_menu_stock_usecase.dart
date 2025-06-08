@@ -1,51 +1,46 @@
-// Use case untuk memperbarui stok menu berdasarkan ketersediaan bahan (domain layer)
+// Use case untuk menghitung dan mengupdate stok menu berdasarkan requirements
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
-import '../entities/menu_entity.dart';
 import '../entities/menu_requirement_entity.dart';
-import '../repositories/menu_repository.dart';
 import '../../../stock/domain/entities/ingredient_entity.dart';
-import 'calculate_menu_stock_usecase.dart';
+import './calculate_menu_stock_usecase.dart';
+import '../repositories/menu_repository.dart';
 
 @injectable
 class UpdateMenuStockUseCase {
   final MenuRepository _menuRepository;
   final CalculateMenuStockUseCase _calculateMenuStockUseCase;
 
-  UpdateMenuStockUseCase(this._menuRepository, this._calculateMenuStockUseCase);
+  UpdateMenuStockUseCase({
+    required MenuRepository menuRepository,
+    required CalculateMenuStockUseCase calculateMenuStockUseCase,
+  })  : _menuRepository = menuRepository,
+        _calculateMenuStockUseCase = calculateMenuStockUseCase;
 
-  /// Memperbarui stok menu berdasarkan ketersediaan bahan
-  ///
-  /// Mengembalikan true jika berhasil memperbarui stok menu, false jika gagal.
-  Future<bool> call({
-    required MenuEntity menu,
+  Future<void> call({
+    required String menuId,
     required List<MenuRequirementEntity> menuRequirements,
     required List<IngredientEntity> availableIngredients,
   }) async {
     try {
-      // Hitung stok menu berdasarkan ketersediaan bahan
-      final newStock = _calculateMenuStockUseCase(
+      // Hitung stok menu berdasarkan bahan yang tersedia
+      final calculatedStock = _calculateMenuStockUseCase(
         menuRequirements: menuRequirements,
         availableIngredients: availableIngredients,
       );
 
-      // Jika stok tidak berubah, tidak perlu update
-      if (menu.stock == newStock) {
-        return false;
-      }
-
-      // Update stok menu
-      await _menuRepository.updateMenu(
-        id: menu.id,
-        name: menu.name,
-        price: menu.price,
-        stock: newStock,
-        currentImageUrl: menu.imageUrl,
-        requirements: menuRequirements,
+      // Update stok menu di repository
+      await _menuRepository.updateMenuStock(
+        menuId: menuId,
+        stock: calculatedStock,
       );
 
-      return true;
+      debugPrint(
+          'Stok menu berhasil diupdate: $menuId, stok: $calculatedStock');
     } catch (e) {
-      return false;
+      debugPrint('Error updating menu stock: $e');
+      throw Exception('Gagal mengupdate stok menu: $e');
     }
   }
 }
