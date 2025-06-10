@@ -15,6 +15,8 @@ import 'features/cashier/presentation/home_page.dart';
 import 'features/stock/presentation/page_stock.dart';
 import 'features/auth/presentation/pages/auth_wrapper.dart';
 import 'features/menu/presentation/page_menu.dart';
+import 'features/cashier/bloc/cashier_bloc.dart';
+import 'package:get_it/get_it.dart';
 
 // Komentar: Pastikan Firebase diinisialisasi sebelum runApp
 void main() async {
@@ -42,6 +44,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (_) =>
               AuthBloc(repository: AuthRepositoryImpl(AuthDataSource())),
+        ),
+        BlocProvider(
+          create: (_) => GetIt.instance<CashierBloc>()..add(LoadMenusEvent()),
         ),
       ],
       child: MaterialApp(

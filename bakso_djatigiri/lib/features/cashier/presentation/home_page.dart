@@ -6,19 +6,17 @@ import 'package:intl/intl.dart';
 import 'package:get_it/get_it.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
-import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
+import '../../../core/animation/page_transitions.dart';
 import '../../menu/domain/entities/menu_entity.dart';
 import '../bloc/cashier_bloc.dart';
+import '../presentation/cart.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.instance<CashierBloc>()..add(LoadMenusEvent()),
-      child: const _HomePageView(),
-    );
+    return const _HomePageView();
   }
 }
 
@@ -37,6 +35,7 @@ class _HomePageViewState extends State<_HomePageView> {
     symbol: 'Rp ',
     decimalDigits: 0,
   );
+  bool _isRefreshing = false;
 
   final navBarItems = [
     CustomNavBarItem(
@@ -49,6 +48,51 @@ class _HomePageViewState extends State<_HomePageView> {
     CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
     CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Reload menu saat halaman dibuka untuk mendapatkan stok terbaru
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _refreshMenus();
+      }
+    });
+  }
+
+  // Fungsi untuk refresh menu
+  Future<void> _refreshMenus() async {
+    if (mounted) {
+      setState(() {
+        _isRefreshing = true;
+      });
+
+      try {
+        context.read<CashierBloc>().add(LoadMenusEvent());
+
+        // Tambahkan delay kecil untuk memberi waktu UI memperbarui
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('Error refreshing menus: $e');
+
+        // Tampilkan snackbar error jika gagal refresh
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memperbarui menu: $e'),
+              backgroundColor: errorColor,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isRefreshing = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -108,12 +152,45 @@ class _HomePageViewState extends State<_HomePageView> {
         ),
         centerTitle: true,
         actions: [
+          // Tombol Refresh
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            // child: IconButton(
+            //   icon: _isRefreshing
+            //       ? const SizedBox(
+            //           width: 20,
+            //           height: 20,
+            //           child: CircularProgressIndicator(
+            //             color: primary950,
+            //             strokeWidth: 2,
+            //           ),
+            //         )
+            //       : const Icon(Icons.refresh, color: primary950),
+            //   onPressed: _isRefreshing ? null : _refreshMenus,
+            //   tooltip: 'Refresh Menu',
+            // ),
+          ),
           // Tombol Cart di pojok kanan atas
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
               onTap: () {
-                // TODO: Navigate to cart page
+                // Navigate to cart page dengan BlocProvider.value
+                final cashierBloc = BlocProvider.of<CashierBloc>(context);
+                Navigator.of(context)
+                    .push(
+                  MaterialPageRoute(
+                    builder: (context) => BlocProvider.value(
+                      value: cashierBloc,
+                      child: const CartPage(),
+                    ),
+                  ),
+                )
+                    .then((_) {
+                  // Refresh menu ketika kembali dari cart page
+                  // untuk memastikan menu yang ditampilkan terupdate
+                  _refreshMenus();
+                });
               },
               child: BlocBuilder<CashierBloc, CashierState>(
                 builder: (context, state) {
@@ -174,134 +251,155 @@ class _HomePageViewState extends State<_HomePageView> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: white900,
-                  borderRadius: BorderRadius.circular(360),
-                  border: Border.all(color: gray700),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+      body: RefreshIndicator(
+        onRefresh: _refreshMenus,
+        color: primary950,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Bar
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: white900,
+                    borderRadius: BorderRadius.circular(360),
+                    border: Border.all(color: gray700),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      context.read<CashierBloc>().add(SearchMenusEvent(value));
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Search',
+                      hintStyle: TextStyle(
+                        color: gray950,
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(Icons.search, color: dark900),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
                     ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    context.read<CashierBloc>().add(SearchMenusEvent(value));
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: TextStyle(
-                      color: gray950,
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: dark900),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
-            ),
 
-            // List Menu Title
-            const Padding(
-              padding: EdgeInsets.only(left: 16, top: 8, bottom: 16),
-              child: Text(
-                'List Menu',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                  color: dark900,
+              // List Menu Title and Refresh Indicator
+              Padding(
+                padding: const EdgeInsets.only(
+                    left: 16, right: 16, top: 8, bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'List Menu',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                        color: dark900,
+                      ),
+                    ),
+                    // Status indikator refresh
+                    if (_isRefreshing)
+                      const Text(
+                        'Memperbarui...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: primary950,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ),
 
-            // Menu Grid
-            Expanded(
-              child: BlocBuilder<CashierBloc, CashierState>(
-                builder: (context, state) {
-                  if (state is CashierLoading) {
-                    return const Center(
-                        child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(primary950),
-                    ));
-                  }
+              // Menu Grid
+              Expanded(
+                child: BlocBuilder<CashierBloc, CashierState>(
+                  builder: (context, state) {
+                    if (state is CashierLoading) {
+                      return const Center(
+                          child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(primary950),
+                      ));
+                    }
 
-                  if (state is CashierError) {
-                    return Center(
-                      child: Text(
-                        state.message,
-                        style: const TextStyle(color: errorColor),
-                      ),
-                    );
-                  }
-
-                  if (state is CashierLoaded) {
-                    final menus = state.filteredMenus;
-
-                    if (menus.isEmpty) {
+                    if (state is CashierError) {
                       return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.search_off,
-                              size: 64,
-                              color: gray800,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Tidak ada menu yang ditemukan',
-                              style: TextStyle(
-                                color: gray900,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(color: errorColor),
                         ),
                       );
                     }
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.builder(
-                        padding: const EdgeInsets.only(bottom: 100),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.7,
-                        ),
-                        itemCount: menus.length,
-                        itemBuilder: (context, index) {
-                          final menu = menus[index];
-                          return _buildMenuCard(menu);
-                        },
-                      ),
-                    );
-                  }
+                    if (state is CashierLoaded) {
+                      final menus = state.filteredMenus;
 
-                  return const Center(
-                    child: Text('Tidak ada data menu'),
-                  );
-                },
+                      if (menus.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: gray800,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Tidak ada menu yang ditemukan',
+                                style: TextStyle(
+                                  color: gray900,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          padding: const EdgeInsets.only(bottom: 100),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.7,
+                          ),
+                          itemCount: menus.length,
+                          itemBuilder: (context, index) {
+                            final menu = menus[index];
+                            return _buildMenuCard(menu);
+                          },
+                        ),
+                      );
+                    }
+
+                    return const Center(
+                      child: Text('Tidak ada data menu'),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: CustomNavBar(

@@ -1,6 +1,7 @@
 // Dependency Injection setup
 import 'package:get_it/get_it.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../features/stock/bloc/stock_bloc.dart';
 import '../features/stock/bloc/create_stock_bloc.dart';
 import '../features/stock/bloc/edit_stock_bloc.dart';
@@ -30,9 +31,16 @@ import '../features/menu/domain/usecases/get_menu_requirements_usecase.dart';
 import '../features/menu/domain/usecases/update_menu_requirements_usecase.dart';
 import '../features/menu/bloc/edit_menu_bloc.dart';
 import '../features/menu/bloc/delete_menu_bloc.dart';
+import '../features/menu/bloc/menu_bloc.dart';
 
 // Import untuk fitur kasir
 import '../features/cashier/bloc/cashier_bloc.dart';
+import '../features/cashier/data/datasources/cashier_data_source.dart';
+import '../features/cashier/data/repositories/cashier_repository_impl.dart';
+import '../features/cashier/domain/repositories/cashier_repository.dart';
+import '../features/cashier/domain/usecases/checkout_usecase.dart';
+import '../features/cashier/domain/usecases/reduce_ingredients_stock_usecase.dart';
+import '../features/cashier/domain/usecases/get_menus_usecase.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -40,6 +48,7 @@ void setupDependencies() {
   // External
   getIt.registerLazySingleton<FirebaseFirestore>(
       () => FirebaseFirestore.instance);
+  getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
 
   // Data Sources
   getIt.registerLazySingleton<StockDataSource>(
@@ -48,6 +57,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<MenuDataSource>(
     () => MenuDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
+  getIt.registerLazySingleton<CashierDataSource>(
+    () => CashierDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
+  );
 
   // Repositories
   getIt.registerLazySingleton<StockRepository>(
@@ -55,6 +67,9 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<MenuRepository>(
     () => MenuRepositoryImpl(getIt<MenuDataSource>()),
+  );
+  getIt.registerLazySingleton<CashierRepository>(
+    () => CashierRepositoryImpl(getIt<CashierDataSource>()),
   );
 
   // Use Cases
@@ -93,6 +108,25 @@ void setupDependencies() {
     () => UpdateAllMenuStocksUseCase(
       getIt<MenuRepository>(),
       getIt<CalculateMenuStockUseCase>(),
+    ),
+  );
+
+  // Cashier Use Cases
+  getIt.registerLazySingleton<GetMenusUseCase>(
+    () => GetMenusUseCase(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerLazySingleton<ReduceIngredientsStockUseCase>(
+    () => ReduceIngredientsStockUseCase(
+      firestore: getIt<FirebaseFirestore>(),
+      getIngredientsUseCase: getIt<GetIngredientsUseCase>(),
+      menuRepository: getIt<MenuRepository>(),
+    ),
+  );
+  getIt.registerLazySingleton<CheckoutUseCase>(
+    () => CheckoutUseCase(
+      firestore: getIt<FirebaseFirestore>(),
+      auth: getIt<FirebaseAuth>(),
+      reduceIngredientsStockUseCase: getIt<ReduceIngredientsStockUseCase>(),
     ),
   );
 
@@ -162,8 +196,18 @@ void setupDependencies() {
     () => DeleteMenuBloc(getIt<DeleteMenuUseCase>()),
   );
 
+  // Menu BLoC untuk mendapatkan semua menu
+  getIt.registerFactory<MenuBloc>(
+    () => MenuBloc(
+      firestore: getIt<FirebaseFirestore>(),
+    ),
+  );
+
   // Cashier BLoCs
   getIt.registerFactory<CashierBloc>(
-    () => CashierBloc(),
+    () => CashierBloc(
+      checkoutUseCase: getIt<CheckoutUseCase>(),
+      getMenusUseCase: getIt<GetMenusUseCase>(),
+    ),
   );
 }
