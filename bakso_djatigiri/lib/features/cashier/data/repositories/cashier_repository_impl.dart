@@ -1,6 +1,5 @@
 // Implementasi repository untuk cashier (data layer)
 import 'package:injectable/injectable.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/cashier_repository.dart';
 import '../models/transaction_item_model.dart';
 import '../datasources/cashier_data_source.dart';

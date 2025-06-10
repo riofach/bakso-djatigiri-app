@@ -3,7 +3,6 @@ import 'package:injectable/injectable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../menu/domain/entities/menu_requirement_entity.dart';
-import '../../../menu/domain/usecases/update_menu_stock_usecase.dart';
 import '../../../menu/domain/repositories/menu_repository.dart';
 import '../../../stock/domain/entities/ingredient_entity.dart';
 import '../../../stock/domain/usecases/get_ingredients_usecase.dart';
@@ -13,15 +12,13 @@ import '../../data/models/transaction_item_model.dart';
 class ReduceIngredientsStockUseCase {
   final FirebaseFirestore _firestore;
   final GetIngredientsUseCase _getIngredientsUseCase;
-  final MenuRepository _menuRepository;
 
   ReduceIngredientsStockUseCase({
     required FirebaseFirestore firestore,
     required GetIngredientsUseCase getIngredientsUseCase,
     required MenuRepository menuRepository,
   })  : _firestore = firestore,
-        _getIngredientsUseCase = getIngredientsUseCase,
-        _menuRepository = menuRepository;
+        _getIngredientsUseCase = getIngredientsUseCase;
 
   Future<void> call(List<TransactionItemModel> items) async {
     try {

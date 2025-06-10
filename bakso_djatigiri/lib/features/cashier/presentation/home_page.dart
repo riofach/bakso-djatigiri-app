@@ -3,12 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:get_it/get_it.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
-import '../../../core/animation/page_transitions.dart';
 import '../../menu/domain/entities/menu_entity.dart';
 import '../bloc/cashier_bloc.dart';
+import '../bloc/notification_bloc.dart';
 import '../presentation/cart.dart';
 
 class HomePage extends StatelessWidget {
@@ -111,22 +110,64 @@ class _HomePageViewState extends State<_HomePageView> {
           padding: const EdgeInsets.only(left: 16.0),
           child: GestureDetector(
             onTap: () {
-              // TODO: Navigate to notifications page
+              // Navigasi ke halaman notifikasi
+              Navigator.pushNamed(context, '/notification');
             },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: white900,
-                borderRadius: BorderRadius.all(Radius.circular(100)),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: dark900,
-                  size: 24,
+            child: Stack(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: white900,
+                    borderRadius: BorderRadius.all(Radius.circular(100)),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: dark900,
+                      size: 24,
+                    ),
+                  ),
                 ),
-              ),
+                // Badge untuk menampilkan jumlah notifikasi yang belum dibaca
+                BlocBuilder<NotificationBloc, NotificationState>(
+                  builder: (context, state) {
+                    int unreadCount = 0;
+                    if (state is NotificationLoaded) {
+                      unreadCount = state.unreadCount;
+                    }
+
+                    if (unreadCount > 0) {
+                      return Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: primary950,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: white900,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -196,7 +237,11 @@ class _HomePageViewState extends State<_HomePageView> {
                 builder: (context, state) {
                   int cartItemCount = 0;
                   if (state is CashierLoaded) {
-                    cartItemCount = state.cartItems.length;
+                    // Hitung total quantity dari semua item
+                    cartItemCount = state.cartItems.fold(
+                      0,
+                      (sum, item) => sum + item.quantity,
+                    );
                   }
 
                   return Stack(
@@ -218,8 +263,8 @@ class _HomePageViewState extends State<_HomePageView> {
                       ),
                       if (cartItemCount > 0)
                         Positioned(
-                          right: 0,
                           top: 0,
+                          right: 0,
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
@@ -230,16 +275,14 @@ class _HomePageViewState extends State<_HomePageView> {
                               minWidth: 18,
                               minHeight: 18,
                             ),
-                            child: Center(
-                              child: Text(
-                                cartItemCount > 9 ? '9+' : '$cartItemCount',
-                                style: const TextStyle(
-                                  color: white900,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
+                            child: Text(
+                              cartItemCount > 9 ? '9+' : '$cartItemCount',
+                              style: const TextStyle(
+                                color: white900,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
@@ -328,7 +371,24 @@ class _HomePageViewState extends State<_HomePageView> {
 
               // Menu Grid
               Expanded(
-                child: BlocBuilder<CashierBloc, CashierState>(
+                child: BlocConsumer<CashierBloc, CashierState>(
+                  listener: (context, state) {
+                    // Tampilkan pesan error validasi stok
+                    if (state is CashierLoaded && state.message != null) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message!),
+                          backgroundColor: errorColor,
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.all(10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   builder: (context, state) {
                     if (state is CashierLoading) {
                       return const Center(
@@ -348,6 +408,7 @@ class _HomePageViewState extends State<_HomePageView> {
 
                     if (state is CashierLoaded) {
                       final menus = state.filteredMenus;
+                      final cartItems = state.cartItems;
 
                       if (menus.isEmpty) {
                         return Center(
@@ -386,7 +447,14 @@ class _HomePageViewState extends State<_HomePageView> {
                           itemCount: menus.length,
                           itemBuilder: (context, index) {
                             final menu = menus[index];
-                            return _buildMenuCard(menu);
+
+                            // Cek apakah menu ini ada di keranjang
+                            final cartItem = cartItems.firstWhere(
+                              (item) => item.menu.id == menu.id,
+                              orElse: () => CartItem(menu: menu, quantity: 0),
+                            );
+
+                            return _buildMenuCard(menu, cartItem.quantity);
                           },
                         ),
                       );
@@ -417,11 +485,14 @@ class _HomePageViewState extends State<_HomePageView> {
     );
   }
 
-  Widget _buildMenuCard(MenuEntity menu) {
+  Widget _buildMenuCard(MenuEntity menu, int currentQuantity) {
     return GestureDetector(
       onTap: () {
-        // TODO: Menambahkan menu ke keranjang
+        // Tambahkan menu ke keranjang
         context.read<CashierBloc>().add(AddToCartEvent(menu));
+
+        // Tampilkan snackbar sebagai konfirmasi jika berhasil
+        // Pesan error validasi stok akan ditangani oleh BlocConsumer
       },
       child: Container(
         decoration: BoxDecoration(
@@ -496,10 +567,35 @@ class _HomePageViewState extends State<_HomePageView> {
                       ),
                       onPressed: () {
                         context.read<CashierBloc>().add(AddToCartEvent(menu));
+
+                        // Tampilkan snackbar sebagai konfirmasi jika berhasil
+                        // Pesan error validasi stok akan ditangani oleh BlocConsumer
                       },
                     ),
                   ),
                 ),
+                // Badge jika item sudah ada di keranjang
+                if (currentQuantity > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: primary950,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$currentQuantity',
+                        style: const TextStyle(
+                          color: white900,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             // Menu details

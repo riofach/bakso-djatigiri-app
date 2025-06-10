@@ -6,12 +6,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
-import '../domain/entities/ingredient_entity.dart';
 import '../domain/usecases/get_ingredients_usecase.dart';
 import '../domain/usecases/update_ingredient_usecase.dart';
-import '../../../config/supabase_storage.dart';
-import '../../../core/utils/image_compressor.dart';
-import '../../../core/utils/storage_helper.dart';
 import '../../../features/menu/domain/usecases/update_all_menu_stocks_usecase.dart';
 
 // Event
@@ -227,14 +223,4 @@ class EditStockBloc extends Bloc<EditStockEvent, EditStockState> {
   //     ));
   //   }
   // }
-
-  Future<File?> _compressImage(String path) async {
-    final file = File(path);
-    return await ImageCompressor.compressImage(file);
-  }
-
-  Future<String?> _uploadImageToSupabase(String path) async {
-    final file = File(path);
-    return await SupabaseStorageService.uploadFile(file);
-  }
 }

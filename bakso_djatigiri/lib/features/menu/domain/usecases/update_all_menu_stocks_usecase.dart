@@ -1,8 +1,6 @@
 // Use case untuk memperbarui stok semua menu saat ada perubahan pada stok bahan (domain layer)
 import 'package:injectable/injectable.dart';
 import 'package:flutter/foundation.dart';
-import '../entities/menu_entity.dart';
-import '../entities/menu_requirement_entity.dart';
 import '../repositories/menu_repository.dart';
 import '../../../stock/domain/entities/ingredient_entity.dart';
 import 'calculate_menu_stock_usecase.dart';

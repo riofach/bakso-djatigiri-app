@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import './page_menu.dart';
 import '../../../core/theme/color_pallete.dart';
-import '../../../di/injection.dart';
 import '../bloc/edit_menu_bloc.dart';
 import '../domain/entities/menu_requirement_entity.dart';
 import '../../stock/domain/entities/ingredient_entity.dart';
