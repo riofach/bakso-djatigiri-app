@@ -52,6 +52,15 @@ import '../features/cashier/domain/usecases/watch_unread_count_usecase.dart';
 import '../features/cashier/domain/usecases/clear_read_notifications_usecase.dart';
 import '../core/services/notification_service.dart';
 
+// Import untuk fitur history
+import '../features/history/bloc/history_bloc.dart';
+import '../features/history/data/datasources/history_data_source.dart';
+import '../features/history/data/repositories/history_repository_impl.dart';
+import '../features/history/domain/repositories/history_repository.dart';
+import '../features/history/domain/usecases/get_transactions_usecase.dart';
+import '../features/history/domain/usecases/get_transaction_items_usecase.dart';
+import '../features/history/domain/usecases/watch_transactions_usecase.dart';
+
 final GetIt getIt = GetIt.instance;
 
 void setupDependencies() {
@@ -73,6 +82,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<CashierDataSource>(
     () => CashierDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
+  getIt.registerLazySingleton<HistoryDataSource>(
+    () => HistoryDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
+  );
 
   // Repositories
   getIt.registerLazySingleton<StockRepository>(
@@ -89,6 +101,9 @@ void setupDependencies() {
       firestore: getIt<FirebaseFirestore>(),
       notificationService: getIt<NotificationService>(),
     ),
+  );
+  getIt.registerLazySingleton<HistoryRepository>(
+    () => HistoryRepositoryImpl(getIt<HistoryDataSource>()),
   );
 
   // Use Cases
@@ -173,6 +188,17 @@ void setupDependencies() {
 
   getIt.registerLazySingleton<ClearReadNotificationsUseCase>(
     () => ClearReadNotificationsUseCase(getIt<NotificationRepository>()),
+  );
+
+  // History Use Cases
+  getIt.registerLazySingleton<GetTransactionsUseCase>(
+    () => GetTransactionsUseCase(getIt<HistoryRepository>()),
+  );
+  getIt.registerLazySingleton<GetTransactionItemsUseCase>(
+    () => GetTransactionItemsUseCase(getIt<HistoryRepository>()),
+  );
+  getIt.registerLazySingleton<WatchTransactionsUseCase>(
+    () => WatchTransactionsUseCase(getIt<HistoryRepository>()),
   );
 
   // BLoCs
@@ -266,6 +292,15 @@ void setupDependencies() {
       watchNotificationsUseCase: getIt<WatchNotificationsUseCase>(),
       watchUnreadCountUseCase: getIt<WatchUnreadCountUseCase>(),
       clearReadNotificationsUseCase: getIt<ClearReadNotificationsUseCase>(),
+    ),
+  );
+
+  // History BLoC
+  getIt.registerFactory<HistoryBloc>(
+    () => HistoryBloc(
+      getTransactionsUseCase: getIt<GetTransactionsUseCase>(),
+      getTransactionItemsUseCase: getIt<GetTransactionItemsUseCase>(),
+      watchTransactionsUseCase: getIt<WatchTransactionsUseCase>(),
     ),
   );
 }

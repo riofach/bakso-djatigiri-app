@@ -17,6 +17,7 @@ import 'features/cashier/presentation/home_page.dart';
 import 'features/stock/presentation/page_stock.dart';
 import 'features/auth/presentation/pages/auth_wrapper.dart';
 import 'features/menu/presentation/page_menu.dart';
+import 'features/history/presentation/page_history.dart';
 import 'features/cashier/bloc/cashier_bloc.dart';
 import 'features/cashier/bloc/notification_bloc.dart';
 import 'features/cashier/presentation/notification.dart';
@@ -74,6 +75,7 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterPage(),
           '/home': (context) => const HomePage(),
           '/menu': (context) => const PageMenu(),
+          '/history': (context) => const PageHistory(),
           '/notification': (context) => const NotificationPage(),
         },
       ),
