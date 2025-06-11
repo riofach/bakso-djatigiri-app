@@ -369,6 +369,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           elevation: 0,
+                          // ignore: deprecated_member_use
                           disabledBackgroundColor: primary950.withOpacity(0.6),
                         ),
                         child: state is AuthLoading

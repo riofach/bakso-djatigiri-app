@@ -35,6 +35,7 @@ class CheckoutUseCase {
       // Validasi pembayaran
       final totalPrice = items.fold<int>(
         0,
+        // ignore: avoid_types_as_parameter_names
         (sum, item) => sum + item.subtotal,
       );
 

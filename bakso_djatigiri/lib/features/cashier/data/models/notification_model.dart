@@ -2,6 +2,7 @@
 import '../../domain/entities/notification_entity.dart';
 
 class NotificationModel extends NotificationEntity {
+  // ignore: use_super_parameters
   const NotificationModel({
     required String id,
     required String title,
