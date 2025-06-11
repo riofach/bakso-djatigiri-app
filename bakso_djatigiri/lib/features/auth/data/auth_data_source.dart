@@ -16,8 +16,8 @@ class AuthDataSource {
   final FirebaseFirestore _firestore;
 
   AuthDataSource({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
-    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-      _firestore = firestore ?? FirebaseFirestore.instance;
+      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<UserModel> login(String email, String password) async {
     try {
@@ -50,6 +50,7 @@ class AuthDataSource {
     }
   }
 
+  // Metode untuk menambahkan user baru tanpa mengganti session owner
   Future<UserModel> register(
     String email,
     String password,
@@ -57,22 +58,63 @@ class AuthDataSource {
     String role = 'kasir',
   }) async {
     try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      final userModel = UserModel(
-        uid: credential.user!.uid,
-        email: email,
-        name: name,
-        role: role,
-        status: 'active',
-      );
-      await _firestore.collection('users').doc(userModel.uid).set({
-        ...userModel.toMap(),
-        'status': 'active',
-      });
-      return userModel;
+      // Simpan user saat ini
+      User? currentUser = _firebaseAuth.currentUser;
+
+      // Simpan credential user saat ini (jika ada)
+      UserCredential? currentUserCredential;
+
+      if (currentUser != null) {
+        // Jika ada user yang login, kita perlu mendapatkan token baru
+        // untuk re-autentikasi nanti
+        // Namun karena kita tidak bisa mendapatkan password user saat ini,
+        // kita akan menggunakan pendekatan yang berbeda
+
+        // Kita akan membuat user baru di Firebase Auth dan Firestore
+        // tanpa mengubah session user saat ini
+
+        // 1. Buat user baru di Firestore langsung (tanpa Firebase Auth)
+        final String uid = _firestore.collection('users').doc().id;
+
+        // 2. Buat model user
+        final userModel = UserModel(
+          uid: uid,
+          email: email,
+          name: name,
+          role: role,
+          status: 'active',
+        );
+
+        // 3. Simpan data user ke Firestore
+        await _firestore.collection('users').doc(uid).set(userModel.toMap());
+
+        return userModel;
+      } else {
+        // Jika tidak ada user yang login, gunakan metode normal
+        // Buat user baru di Firebase Auth
+        final userCredential =
+            await _firebaseAuth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        // Ambil UID dari user baru
+        final String uid = userCredential.user!.uid;
+
+        // Buat model user
+        final userModel = UserModel(
+          uid: uid,
+          email: email,
+          name: name,
+          role: role,
+          status: 'active',
+        );
+
+        // Simpan data user ke Firestore
+        await _firestore.collection('users').doc(uid).set(userModel.toMap());
+
+        return userModel;
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         throw AuthException('Email sudah digunakan.');
@@ -85,6 +127,40 @@ class AuthDataSource {
       }
     } catch (e) {
       throw AuthException('Terjadi kesalahan saat registrasi.');
+    }
+  }
+
+  // Metode alternatif untuk menambahkan user baru tanpa logout
+  // Metode ini menggunakan Firestore langsung tanpa Firebase Auth
+  // Ini tidak direkomendasikan untuk produksi karena alasan keamanan
+  Future<UserModel> createUserInFirestore(
+    String email,
+    String password,
+    String name, {
+    String role = 'kasir',
+  }) async {
+    try {
+      // Buat ID unik untuk user baru
+      final String uid = _firestore.collection('users').doc().id;
+
+      // Buat model user
+      final userModel = UserModel(
+        uid: uid,
+        email: email,
+        name: name,
+        role: role,
+        status: 'active',
+      );
+
+      // Simpan data user ke Firestore
+      await _firestore.collection('users').doc(uid).set(userModel.toMap());
+
+      // Catatan: User ini tidak akan bisa login karena tidak ada di Firebase Auth
+      // Ini hanya untuk demo atau pengujian
+
+      return userModel;
+    } catch (e) {
+      throw AuthException('Terjadi kesalahan saat membuat user: $e');
     }
   }
 

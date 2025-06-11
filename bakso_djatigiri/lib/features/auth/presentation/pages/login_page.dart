@@ -117,15 +117,15 @@ class _LoginPageState extends State<LoginPage> {
                           : const Text('Login'),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).push(FadeInPageRoute(page: const RegisterPage()));
-                    },
-                    child: const Text('Belum punya akun? Register'),
-                  ),
+                  // const SizedBox(height: 16),
+                  // TextButton(
+                  //   onPressed: () {
+                  //     Navigator.of(
+                  //       context,
+                  //     ).push(FadeInPageRoute(page: const RegisterPage()));
+                  //   },
+                  //   child: const Text('Belum punya akun? Register'),
+                  // ),
                 ],
               ),
             ),

@@ -24,9 +24,11 @@ class RegisterEvent extends AuthEvent {
   final String email;
   final String password;
   final String name;
-  RegisterEvent(this.email, this.password, this.name);
+  final String role;
+
+  RegisterEvent(this.email, this.password, this.name, {this.role = 'kasir'});
   @override
-  List<Object?> get props => [email, password, name];
+  List<Object?> get props => [email, password, name, role];
 }
 
 class LogoutEvent extends AuthEvent {}
@@ -51,6 +53,13 @@ class Authenticated extends AuthState {
   Authenticated(this.uid, this.email, this.name, this.role);
   @override
   List<Object?> get props => [uid, email, name, role];
+}
+
+class RegisterSuccess extends AuthState {
+  final String name;
+  RegisterSuccess(this.name);
+  @override
+  List<Object?> get props => [name];
 }
 
 class Unauthenticated extends AuthState {}
@@ -89,8 +98,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           email: event.email,
           password: event.password,
           name: event.name,
+          role: event.role,
         );
-        emit(Authenticated(user.uid, user.email, user.name, user.role));
+        emit(RegisterSuccess(user.name));
       } on AuthException catch (e) {
         emit(AuthError(e.message));
         emit(Unauthenticated());
