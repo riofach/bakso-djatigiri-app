@@ -1,39 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Hanya user yang login yang bisa baca/tulis dokumen miliknya sendiri
+    // Fungsi helper untuk mengecek apakah user adalah owner
+    function isOwner() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+    }
+
+    // Hanya user yang login yang bisa baca dokumen user
+    // User hanya bisa menulis dokumen miliknya sendiri ATAU jika user adalah owner
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && (request.auth.uid == userId || isOwner());
+      allow update, delete: if request.auth != null && (request.auth.uid == userId || isOwner());
     }
 
     // Koleksi ingredients, menus, transactions, dsb: hanya user login yang bisa read/write
     match /ingredients/{ingredientId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow write: if isOwner();
     }
 
     match /menus/{menuId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow write: if isOwner();
     }
 
     // Menambahkan rules untuk menu_requirements
     match /menu_requirements/{requirementId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow write: if isOwner();
     }
 
     match /transactions/{transactionId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow update, delete: if isOwner();
     }
 
     match /transaction_items/{itemId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow update, delete: if isOwner();
     }
 
     // Aturan untuk notifikasi
@@ -41,7 +49,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null;
-      allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+      allow delete: if isOwner();
     }
 
     // Default deny untuk koleksi lain

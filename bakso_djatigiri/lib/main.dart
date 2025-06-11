@@ -18,6 +18,7 @@ import 'features/stock/presentation/page_stock.dart';
 import 'features/auth/presentation/pages/auth_wrapper.dart';
 import 'features/menu/presentation/page_menu.dart';
 import 'features/history/presentation/page_history.dart';
+import 'features/profile/presentation/page_profile.dart';
 import 'features/cashier/bloc/cashier_bloc.dart';
 import 'features/cashier/bloc/notification_bloc.dart';
 import 'features/cashier/presentation/notification.dart';
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
           '/home': (context) => const HomePage(),
           '/menu': (context) => const PageMenu(),
           '/history': (context) => const PageHistory(),
+          '/profile': (context) => const PageProfile(),
           '/notification': (context) => const NotificationPage(),
         },
       ),

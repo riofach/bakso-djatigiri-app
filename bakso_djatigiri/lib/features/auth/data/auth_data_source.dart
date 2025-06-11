@@ -182,3 +182,4 @@ class AuthDataSource {
     return UserModel.fromMap(data);
   }
 }
+>>>>>>> 0be1bb7eb374ce49ff11fa8e49daf5cd6c1a3c7f
