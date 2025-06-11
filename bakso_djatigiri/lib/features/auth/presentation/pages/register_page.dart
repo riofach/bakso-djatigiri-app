@@ -1,4 +1,6 @@
 // Halaman Register
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/color_pallete.dart';
@@ -367,6 +369,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           elevation: 0,
+                          // ignore: deprecated_member_use
                           disabledBackgroundColor: primary950.withOpacity(0.6),
                         ),
                         child: state is AuthLoading

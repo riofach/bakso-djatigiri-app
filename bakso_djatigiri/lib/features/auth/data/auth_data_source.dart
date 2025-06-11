@@ -62,6 +62,7 @@ class AuthDataSource {
       User? currentUser = _firebaseAuth.currentUser;
 
       // Simpan credential user saat ini (jika ada)
+      // ignore: unused_local_variable
       UserCredential? currentUserCredential;
 
       if (currentUser != null) {
@@ -181,3 +182,4 @@ class AuthDataSource {
     return UserModel.fromMap(data);
   }
 }
+>>>>>>> 0be1bb7eb374ce49ff11fa8e49daf5cd6c1a3c7f

@@ -30,6 +30,7 @@ class _NotificationPageView extends StatefulWidget {
 
 class _NotificationPageViewState extends State<_NotificationPageView> {
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+  // ignore: unused_field
   bool _isRefreshing = false;
   bool _isDeleting = false;
 
