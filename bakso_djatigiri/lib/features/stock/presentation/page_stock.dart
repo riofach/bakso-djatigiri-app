@@ -32,6 +32,7 @@ class _PageStockView extends StatefulWidget {
 class _PageStockViewState extends State<_PageStockView> {
   // ignore: prefer_final_fields
   int _selectedIndex = 3; // Stock di index ke-3
+  bool _isRefreshing = false;
 
   final navBarItems = [
     CustomNavBarItem(
@@ -44,6 +45,39 @@ class _PageStockViewState extends State<_PageStockView> {
     CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
     CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
   ];
+
+  // Fungsi untuk refresh stok
+  Future<void> _refreshStocks() async {
+    if (mounted) {
+      setState(() {
+        _isRefreshing = true;
+      });
+
+      try {
+        context.read<StockBloc>().add(LoadStocksEvent());
+        // Tambahkan delay kecil untuk memberi waktu UI memperbarui
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('Error refreshing stocks: $e');
+
+        // Tampilkan snackbar error jika gagal refresh
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memperbarui stok: $e'),
+              backgroundColor: errorColor,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isRefreshing = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,250 +166,303 @@ class _PageStockViewState extends State<_PageStockView> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: white900,
-                borderRadius: BorderRadius.circular(360),
-                border: Border.all(color: const Color(0xFFC7C7D1)),
-              ),
-              child: TextField(
-                onChanged: (val) =>
-                    context.read<StockBloc>().add(SearchStocksEvent(val)),
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+      body: RefreshIndicator(
+        onRefresh: _refreshStocks,
+        color: primary950,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: white900,
+                  borderRadius: BorderRadius.circular(360),
+                  border: Border.all(color: const Color(0xFFC7C7D1)),
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Search',
-                  hintStyle: TextStyle(
-                    color: Color(0xFF989898),
+                child: TextField(
+                  onChanged: (val) =>
+                      context.read<StockBloc>().add(SearchStocksEvent(val)),
+                  style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Icon(Icons.search, color: dark900, size: 24),
+                  decoration: const InputDecoration(
+                    hintText: 'Search',
+                    hintStyle: TextStyle(
+                      color: Color(0xFF989898),
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Icon(Icons.search, color: dark900, size: 24),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 14),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
             ),
-          ),
 
-          // List Stock Product Title
-          const Padding(
-            padding: EdgeInsets.only(left: 16, top: 16, bottom: 8),
-            child: Text(
-              'List Stock Product',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: dark900,
+            // List Stock Product Title
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'List Stock Product',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: dark900,
+                    ),
+                  ),
+                  // Status indikator refresh
+                  if (_isRefreshing)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Text(
+                        'Memperbarui...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          color: primary950,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
 
-          // List Stock Product
-          Expanded(
-            child: BlocConsumer<StockBloc, StockState>(
-              listener: (context, state) {
-                if (state is StockError) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(state.message)));
-                }
-              },
-              builder: (context, state) {
-                if (state is StockInitial || state is StockLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is StockError) {
-                  return Center(child: Text(state.message));
-                }
-
-                if (state is StockLoaded) {
-                  final ingredients = state.filteredIngredients;
-
-                  if (ingredients.isEmpty) {
-                    return const Center(child: Text('Belum ada data stock'));
+            // List Stock Product
+            Expanded(
+              child: BlocConsumer<StockBloc, StockState>(
+                listener: (context, state) {
+                  if (state is StockError) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(state.message)));
+                  }
+                },
+                builder: (context, state) {
+                  if (state is StockInitial || state is StockLoading) {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(primary950),
+                    ));
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.builder(
-                      itemCount: ingredients.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 11,
-                        crossAxisSpacing: 11,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemBuilder: (context, i) {
-                        final item = ingredients[i];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: white900,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFEFEFEF)),
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                FadeInPageRoute(
-                                  page: EditStockPage(id: item.id),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Image Container
-                                Container(
-                                  height: 132,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFEFEF),
-                                    borderRadius: BorderRadius.circular(8),
+                  if (state is StockError) {
+                    return Center(child: Text(state.message));
+                  }
+
+                  if (state is StockLoaded) {
+                    final ingredients = state.filteredIngredients;
+
+                    if (ingredients.isEmpty) {
+                      return const Center(child: Text('Belum ada data stock'));
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
+                        itemCount: ingredients.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 11,
+                          crossAxisSpacing: 11,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemBuilder: (context, i) {
+                          final item = ingredients[i];
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: white900,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: const Color(0xFFEFEFEF)),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context)
+                                    .push(
+                                  FadeInPageRoute(
+                                    page: EditStockPage(id: item.id),
                                   ),
-                                  child: item.imageUrl.isNotEmpty &&
-                                          Uri.parse(item.imageUrl).isAbsolute &&
-                                          (item.imageUrl
-                                                  .startsWith('http://') ||
-                                              item.imageUrl
-                                                  .startsWith('https://'))
-                                      ? ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Image.network(
-                                            item.imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (c, e, s) => Center(
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: const [
-                                                  Icon(
-                                                    Icons.image,
-                                                    color: dark900,
-                                                    size: 24,
-                                                  ),
-                                                  SizedBox(height: 4),
-                                                  Text(
-                                                    'Image placeholder',
-                                                    style: TextStyle(
+                                )
+                                    .then((_) {
+                                  // Refresh data setelah kembali dari halaman edit
+                                  _refreshStocks();
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Image Container
+                                  Container(
+                                    height: 132,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEFEFEF),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: item.imageUrl.isNotEmpty &&
+                                            Uri.parse(item.imageUrl)
+                                                .isAbsolute &&
+                                            (item.imageUrl
+                                                    .startsWith('http://') ||
+                                                item.imageUrl
+                                                    .startsWith('https://'))
+                                        ? ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Image.network(
+                                              item.imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (c, e, s) => Center(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: const [
+                                                    Icon(
+                                                      Icons.image,
                                                       color: dark900,
-                                                      fontFamily: 'Poppins',
-                                                      fontSize: 8,
-                                                      fontWeight:
-                                                          FontWeight.w400,
+                                                      size: 24,
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      : Center(
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: const [
-                                              Icon(
-                                                Icons.image,
-                                                color: dark900,
-                                                size: 24,
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                'Image placeholder',
-                                                style: TextStyle(
-                                                  color: dark900,
-                                                  fontFamily: 'Poppins',
-                                                  fontSize: 8,
-                                                  fontWeight: FontWeight.w400,
+                                                    SizedBox(height: 4),
+                                                    Text(
+                                                      'Image placeholder',
+                                                      style: TextStyle(
+                                                        color: dark900,
+                                                        fontFamily: 'Poppins',
+                                                        fontSize: 8,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ],
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    value: loadingProgress
+                                                                .expectedTotalBytes !=
+                                                            null
+                                                        ? loadingProgress
+                                                                .cumulativeBytesLoaded /
+                                                            loadingProgress
+                                                                .expectedTotalBytes!
+                                                        : null,
+                                                    valueColor:
+                                                        const AlwaysStoppedAnimation<
+                                                            Color>(primary950),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: const [
+                                                Icon(
+                                                  Icons.image,
+                                                  color: dark900,
+                                                  size: 24,
+                                                ),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  'Image placeholder',
+                                                  style: TextStyle(
+                                                    color: dark900,
+                                                    fontFamily: 'Poppins',
+                                                    fontSize: 8,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                ),
+                                  ),
 
-                                // Text Content
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 4,
-                                    right: 4,
-                                    top: 8,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.name,
-                                        style: const TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 16,
-                                          color: dark900,
+                                  // Text Content
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 4,
+                                      right: 4,
+                                      top: 8,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 16,
+                                            color: dark900,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 12,
-                                            height: 12,
-                                            child: Icon(
-                                              Icons.local_fire_department,
-                                              color: primary900,
-                                              size: 14,
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 12,
+                                              height: 12,
+                                              child: Icon(
+                                                Icons.local_fire_department,
+                                                color: primary900,
+                                                size: 14,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Stock: ${item.stockAmount}',
-                                            style: const TextStyle(
-                                              fontFamily: 'Poppins',
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w400,
-                                              color: gray900,
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Stock: ${item.stockAmount}',
+                                              style: const TextStyle(
+                                                fontFamily: 'Poppins',
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w400,
+                                                color: gray900,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                }
+                          );
+                        },
+                      ),
+                    );
+                  }
 
-                return const Center(child: Text('Terjadi kesalahan'));
-              },
+                  return const Center(child: Text('Terjadi kesalahan'));
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: CustomNavBar(
         currentIndex: _selectedIndex,

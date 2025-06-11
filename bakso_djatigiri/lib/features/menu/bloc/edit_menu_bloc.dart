@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
-import '../domain/entities/menu_entity.dart';
 import '../domain/entities/menu_requirement_entity.dart';
 import '../../../features/stock/domain/entities/ingredient_entity.dart';
 import '../domain/usecases/get_menu_usecase.dart';
@@ -19,9 +18,6 @@ import '../domain/usecases/get_ingredients_for_menu_usecase.dart';
 import '../domain/usecases/update_menu_requirements_usecase.dart';
 import '../domain/usecases/delete_menu_usecase.dart';
 import '../domain/usecases/update_menu_stock_usecase.dart';
-import '../../../config/supabase_storage.dart';
-import '../../../core/utils/image_compressor.dart';
-import '../../../core/utils/storage_helper.dart';
 
 // Event
 abstract class EditMenuEvent extends Equatable {
@@ -548,15 +544,5 @@ class EditMenuBloc extends Bloc<EditMenuEvent, EditMenuState> {
         error: 'Gagal menghapus menu: $e',
       ));
     }
-  }
-
-  Future<File?> _compressImage(String path) async {
-    final file = File(path);
-    return await ImageCompressor.compressImage(file);
-  }
-
-  Future<String?> _uploadImageToSupabase(String path) async {
-    final file = File(path);
-    return await SupabaseStorageService.uploadFile(file);
   }
 }

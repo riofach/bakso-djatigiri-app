@@ -3,17 +3,18 @@ import 'package:injectable/injectable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../menu/domain/entities/menu_requirement_entity.dart';
-import '../../../menu/domain/usecases/update_menu_stock_usecase.dart';
 import '../../../menu/domain/repositories/menu_repository.dart';
 import '../../../stock/domain/entities/ingredient_entity.dart';
 import '../../../stock/domain/usecases/get_ingredients_usecase.dart';
 import '../../data/models/transaction_item_model.dart';
+import '../../../menu/domain/usecases/calculate_menu_stock_usecase.dart';
 
 @injectable
 class ReduceIngredientsStockUseCase {
   final FirebaseFirestore _firestore;
   final GetIngredientsUseCase _getIngredientsUseCase;
   final MenuRepository _menuRepository;
+  final CalculateMenuStockUseCase _calculateMenuStockUseCase;
 
   ReduceIngredientsStockUseCase({
     required FirebaseFirestore firestore,
@@ -21,7 +22,8 @@ class ReduceIngredientsStockUseCase {
     required MenuRepository menuRepository,
   })  : _firestore = firestore,
         _getIngredientsUseCase = getIngredientsUseCase,
-        _menuRepository = menuRepository;
+        _menuRepository = menuRepository,
+        _calculateMenuStockUseCase = const CalculateMenuStockUseCase();
 
   Future<void> call(List<TransactionItemModel> items) async {
     try {
@@ -125,6 +127,8 @@ class ReduceIngredientsStockUseCase {
       final writeBatch = _firestore.batch();
 
       // 6.1 Update ingredient stock
+      final updatedIngredients = <String, IngredientEntity>{};
+
       for (var entry in ingredientUsage.entries) {
         final ingredientId = entry.key;
         final usedAmount = entry.value;
@@ -145,12 +149,16 @@ class ReduceIngredientsStockUseCase {
             'updated_at': FieldValue.serverTimestamp(),
           });
 
+          // Simpan ingredient yang diupdate untuk perhitungan stok menu
+          updatedIngredients[ingredientId] =
+              ingredient.copyWith(stockAmount: newStock);
+
           debugPrint(
               'ReduceIngredientsStockUseCase: Bahan ${ingredient.name} - stok ${ingredient.stockAmount} -> $newStock (dikurangi $usedAmount)');
         }
       }
 
-      // 6.2 Update menu stock dalam batch yang sama
+      // 6.2 Update menu stock dalam batch yang sama - hanya untuk menu yang dibeli
       for (var entry in menuQuantities.entries) {
         final menuId = entry.key;
         final quantity = entry.value;
@@ -179,9 +187,12 @@ class ReduceIngredientsStockUseCase {
       // 7. Commit semua perubahan dalam satu transaksi
       await writeBatch.commit();
       debugPrint(
-          'ReduceIngredientsStockUseCase: Batch update berhasil - stok bahan dan menu berhasil diperbarui');
+          'ReduceIngredientsStockUseCase: Batch update berhasil - stok bahan berhasil diperbarui');
 
-      // 8. Verifikasi update berhasil dengan mengambil data terbaru
+      // 8. Perbarui stok semua menu yang menggunakan bahan yang diubah
+      await _updateAllMenuStocks(updatedIngredients.values.toList(), menuIds);
+
+      // 9. Verifikasi update berhasil dengan mengambil data terbaru
       final updatedMenus = await _firestore
           .collection('menus')
           .where(FieldPath.documentId, whereIn: menuIds)
@@ -200,6 +211,88 @@ class ReduceIngredientsStockUseCase {
     } catch (e) {
       debugPrint('ReduceIngredientsStockUseCase: Error - $e');
       throw Exception('Gagal mengurangi stok bahan: $e');
+    }
+  }
+
+  // Fungsi untuk memperbarui stok semua menu yang menggunakan bahan yang diubah
+  Future<void> _updateAllMenuStocks(
+    List<IngredientEntity> updatedIngredients,
+    List<String> excludeMenuIds,
+  ) async {
+    try {
+      debugPrint(
+          'ReduceIngredientsStockUseCase: Memperbarui stok semua menu...');
+
+      // 1. Dapatkan semua menu
+      final allMenus = await _menuRepository.getMenus();
+
+      // 2. Filter menu yang akan diupdate (exclude menu yang sudah diupdate secara manual)
+      final menus =
+          allMenus.where((menu) => !excludeMenuIds.contains(menu.id)).toList();
+
+      debugPrint(
+          'ReduceIngredientsStockUseCase: Total menu yang akan diupdate: ${menus.length}');
+
+      // 3. Dapatkan semua ingredients untuk perhitungan stok
+      final allIngredients = await _getIngredientsUseCase();
+
+      // 4. Buat map ingredient yang sudah diupdate
+      final Map<String, IngredientEntity> ingredientMap = {
+        for (var ingredient in allIngredients) ingredient.id: ingredient
+      };
+
+      // 5. Update dengan ingredients yang baru saja diubah
+      for (var updatedIngredient in updatedIngredients) {
+        ingredientMap[updatedIngredient.id] = updatedIngredient;
+      }
+
+      // 6. Batch untuk update menu stocks
+      final batch = _firestore.batch();
+      int updatedCount = 0;
+
+      // 7. Perbarui stok setiap menu
+      for (var menu in menus) {
+        // Ambil requirements untuk menu ini
+        final requirements = await _menuRepository.getMenuRequirements(menu.id);
+
+        if (requirements.isEmpty) {
+          continue; // Skip menu tanpa requirements
+        }
+
+        // Hitung stok menu berdasarkan ketersediaan bahan
+        final newStock = _calculateMenuStockUseCase(
+          menuRequirements: requirements,
+          availableIngredients: ingredientMap.values.toList(),
+        );
+
+        // Jika stok berubah, update di Firestore
+        if (menu.stock != newStock) {
+          debugPrint(
+              'ReduceIngredientsStockUseCase: Menu ${menu.name} - stok lama: ${menu.stock}, stok baru: $newStock');
+
+          final menuRef = _firestore.collection('menus').doc(menu.id);
+          batch.update(menuRef, {
+            'stock': newStock,
+            'updated_at': FieldValue.serverTimestamp(),
+          });
+
+          updatedCount++;
+        }
+      }
+
+      // 8. Commit batch update jika ada perubahan
+      if (updatedCount > 0) {
+        await batch.commit();
+        debugPrint(
+            'ReduceIngredientsStockUseCase: Berhasil memperbarui stok ${updatedCount} menu');
+      } else {
+        debugPrint(
+            'ReduceIngredientsStockUseCase: Tidak ada menu yang perlu diperbarui');
+      }
+    } catch (e) {
+      debugPrint(
+          'ReduceIngredientsStockUseCase: Error updating all menu stocks: $e');
+      // Tidak throw exception agar proses checkout tetap berhasil
     }
   }
 }

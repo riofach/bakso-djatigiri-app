@@ -3,11 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/color_pallete.dart';
-import '../../../core/animation/page_transitions.dart';
-import '../../menu/domain/entities/menu_entity.dart';
 import '../bloc/cashier_bloc.dart';
 
 class CartPage extends StatelessWidget {
@@ -115,6 +112,20 @@ class _CartPageViewState extends State<_CartPageView> {
 
             // Tampilkan error dialog
             _showErrorDialog(context, state.message);
+          } else if (state is CashierLoaded && state.message != null) {
+            // Tampilkan pesan error validasi stok
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message!),
+                backgroundColor: errorColor,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
           }
         },
         builder: (context, state) {
@@ -197,13 +208,20 @@ class _CartPageViewState extends State<_CartPageView> {
             children: [
               // List item keranjang
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: cartItems.length,
-                  itemBuilder: (context, index) {
-                    final item = cartItems[index];
-                    return _buildCartItem(context, item, index);
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<CashierBloc>().add(LoadMenusEvent());
+                    return Future.delayed(const Duration(milliseconds: 500));
                   },
+                  color: primary950,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = cartItems[index];
+                      return _buildCartItem(context, item, index);
+                    },
+                  ),
                 ),
               ),
 
@@ -375,7 +393,7 @@ class _CartPageViewState extends State<_CartPageView> {
     );
   }
 
-  Widget _buildCartItem(BuildContext context, MenuEntity item, int index) {
+  Widget _buildCartItem(BuildContext context, CartItem item, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -401,9 +419,9 @@ class _CartPageViewState extends State<_CartPageView> {
               color: gray600,
             ),
             clipBehavior: Clip.antiAlias,
-            child: item.imageUrl.isNotEmpty
+            child: item.menu.imageUrl.isNotEmpty
                 ? Image.network(
-                    item.imageUrl,
+                    item.menu.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (c, e, s) => const Icon(
                       Icons.fastfood,
@@ -424,7 +442,7 @@ class _CartPageViewState extends State<_CartPageView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  item.menu.name,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -434,17 +452,87 @@ class _CartPageViewState extends State<_CartPageView> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  _currencyFormat.format(item.price),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: primary950,
+                Row(
+                  children: [
+                    // Tampilkan harga total (harga × quantity)
+                    Text(
+                      _currencyFormat.format(item.price),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: primary950,
+                      ),
+                    ),
+                    if (item.quantity > 1)
+                      Text(
+                        ' (${item.quantity})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: gray900,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Kontrol quantity
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: gray700),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                // Tombol kurangi
+                InkWell(
+                  onTap: () {
+                    context.read<CashierBloc>().add(
+                          DecreaseCartItemQuantityEvent(index),
+                        );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.remove,
+                      size: 18,
+                      color: dark900,
+                    ),
+                  ),
+                ),
+                // Jumlah
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '${item.quantity}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // Tombol tambah
+                InkWell(
+                  onTap: () {
+                    context.read<CashierBloc>().add(
+                          IncreaseCartItemQuantityEvent(index),
+                        );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.add,
+                      size: 18,
+                      color: dark900,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+
           // Tombol hapus
           IconButton(
             icon: const Icon(
@@ -489,83 +577,210 @@ class _CartPageViewState extends State<_CartPageView> {
   }
 
   void _showSuccessDialog(BuildContext context) {
-    final totalPrice = (context.read<CashierBloc>().state as CashierLoaded)
-        .cartItems
-        .fold<int>(0, (sum, item) => sum + item.price);
+    // Dapatkan data transaksi dari state CashierBloc
+    final cashierState = context.read<CashierBloc>().state;
 
-    final payment = _currentPayment;
+    if (cashierState is CashierLoaded) {
+      // Ambil data transaksi terakhir dari state
+      final totalPrice = cashierState.lastTransactionTotal ??
+          cashierState.cartItems.fold<int>(0, (sum, item) => sum + item.price);
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => WillPopScope(
-        onWillPop: () async =>
-            false, // Mencegah dialog ditutup dengan back button
-        child: AlertDialog(
-          title: const Text('Transaksi Berhasil'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle_outline,
-                color: Colors.green,
-                size: 64,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Total: ${_currencyFormat.format(totalPrice)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Pembayaran: ${_currencyFormat.format(payment)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Kembalian: ${_currencyFormat.format(payment - totalPrice)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Tutup dialog
-                Navigator.of(dialogContext).pop();
+      final payment = cashierState.lastTransactionPayment ?? _currentPayment;
+      final change = payment - totalPrice;
 
-                // Refresh data menu terlebih dahulu
-                if (context.mounted) {
-                  context.read<CashierBloc>().add(LoadMenusEvent());
-                }
-
-                // Tunggu sebentar untuk memastikan state terupdate
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  // Kembali ke halaman utama dengan pop
-                  if (context.mounted) {
-                    if (Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop();
-                    } else {
-                      // Jika pop tidak berhasil, navigasi ke halaman home dengan pushReplacement
-                      Navigator.of(context).pushReplacementNamed('/home');
-                    }
-                  }
-                });
-              },
-              child: const Text('OK'),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => WillPopScope(
+          onWillPop: () async =>
+              false, // Mencegah dialog ditutup dengan back button
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ],
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: white900,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Transaksi Berhasil',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: dark900,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFEF4444),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: white900,
+                      size: 50,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Total
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: dark900,
+                          ),
+                        ),
+                        Text(
+                          _currencyFormat.format(totalPrice),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: dark900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Pembayaran
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Pembayaran:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: dark900,
+                          ),
+                        ),
+                        Text(
+                          _currencyFormat.format(payment),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: dark900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Kembalian
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Kembalian:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: dark900,
+                          ),
+                        ),
+                        Text(
+                          _currencyFormat.format(change),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: null,
+                        foregroundColor: white900,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ).copyWith(
+                        backgroundColor: MaterialStateProperty.all(
+                          Colors.transparent,
+                        ),
+                      ),
+                      onPressed: () {
+                        // Tutup dialog
+                        Navigator.of(dialogContext).pop();
+
+                        // Refresh data menu terlebih dahulu
+                        if (context.mounted) {
+                          context.read<CashierBloc>().add(LoadMenusEvent());
+                        }
+
+                        // Tunggu sebentar untuk memastikan state terupdate
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          // Kembali ke halaman utama dengan pop
+                          if (context.mounted) {
+                            if (Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                            } else {
+                              // Jika pop tidak berhasil, navigasi ke halaman home dengan pushReplacement
+                              Navigator.of(context)
+                                  .pushReplacementNamed('/home');
+                            }
+                          }
+                        });
+                      },
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'OK',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   void _showErrorDialog(BuildContext context, String message) {

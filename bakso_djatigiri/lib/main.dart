@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mie_bakso_djatigiri/config/supabase_storage.dart';
+import 'package:mie_bakso_djatigiri/core/services/notification_service.dart';
 import 'package:mie_bakso_djatigiri/di/injection.dart';
 import 'config/firebase_options.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -15,7 +17,10 @@ import 'features/cashier/presentation/home_page.dart';
 import 'features/stock/presentation/page_stock.dart';
 import 'features/auth/presentation/pages/auth_wrapper.dart';
 import 'features/menu/presentation/page_menu.dart';
+import 'features/history/presentation/page_history.dart';
 import 'features/cashier/bloc/cashier_bloc.dart';
+import 'features/cashier/bloc/notification_bloc.dart';
+import 'features/cashier/presentation/notification.dart';
 import 'package:get_it/get_it.dart';
 
 // Komentar: Pastikan Firebase diinisialisasi sebelum runApp
@@ -27,6 +32,12 @@ void main() async {
 
   // Inisialisasi Supabase Storage
   await SupabaseStorageService.init();
+
+  // Inisialisasi Notification Service
+  await NotificationService().init();
+
+  // Inisialisasi format tanggal untuk locale Indonesia
+  await initializeDateFormatting('id_ID', null);
 
   // Setup dependency injection
   setupDependencies();
@@ -48,6 +59,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (_) => GetIt.instance<CashierBloc>()..add(LoadMenusEvent()),
         ),
+        BlocProvider(
+          create: (_) => GetIt.instance<NotificationBloc>(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -61,6 +75,8 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterPage(),
           '/home': (context) => const HomePage(),
           '/menu': (context) => const PageMenu(),
+          '/history': (context) => const PageHistory(),
+          '/notification': (context) => const NotificationPage(),
         },
       ),
     );

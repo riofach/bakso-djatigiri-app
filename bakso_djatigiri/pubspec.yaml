@@ -74,6 +74,8 @@ dependencies:
   go_router: ^15.1.2
   firebase_core_platform_interface: ^5.4.0
   dartz: ^0.10.1
+  flutter_local_notifications: ^19.2.1
+  firebase_rules_generator: ^0.2.4
 
 dev_dependencies:
   flutter_test:

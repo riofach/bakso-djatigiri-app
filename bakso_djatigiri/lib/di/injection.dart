@@ -41,6 +41,25 @@ import '../features/cashier/domain/repositories/cashier_repository.dart';
 import '../features/cashier/domain/usecases/checkout_usecase.dart';
 import '../features/cashier/domain/usecases/reduce_ingredients_stock_usecase.dart';
 import '../features/cashier/domain/usecases/get_menus_usecase.dart';
+import '../features/cashier/bloc/notification_bloc.dart';
+import '../features/cashier/data/notification_repository_impl.dart';
+import '../features/cashier/domain/repositories/notification_repository.dart';
+import '../features/cashier/domain/usecases/create_stock_warning_notification_usecase.dart';
+import '../features/cashier/domain/usecases/get_notifications_usecase.dart';
+import '../features/cashier/domain/usecases/mark_notification_as_read_usecase.dart';
+import '../features/cashier/domain/usecases/watch_notifications_usecase.dart';
+import '../features/cashier/domain/usecases/watch_unread_count_usecase.dart';
+import '../features/cashier/domain/usecases/clear_read_notifications_usecase.dart';
+import '../core/services/notification_service.dart';
+
+// Import untuk fitur history
+import '../features/history/bloc/history_bloc.dart';
+import '../features/history/data/datasources/history_data_source.dart';
+import '../features/history/data/repositories/history_repository_impl.dart';
+import '../features/history/domain/repositories/history_repository.dart';
+import '../features/history/domain/usecases/get_transactions_usecase.dart';
+import '../features/history/domain/usecases/get_transaction_items_usecase.dart';
+import '../features/history/domain/usecases/watch_transactions_usecase.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -49,6 +68,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<FirebaseFirestore>(
       () => FirebaseFirestore.instance);
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+
+  // Services
+  getIt.registerLazySingleton<NotificationService>(() => NotificationService());
 
   // Data Sources
   getIt.registerLazySingleton<StockDataSource>(
@@ -60,6 +82,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<CashierDataSource>(
     () => CashierDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
+  getIt.registerLazySingleton<HistoryDataSource>(
+    () => HistoryDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
+  );
 
   // Repositories
   getIt.registerLazySingleton<StockRepository>(
@@ -70,6 +95,15 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<CashierRepository>(
     () => CashierRepositoryImpl(getIt<CashierDataSource>()),
+  );
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      firestore: getIt<FirebaseFirestore>(),
+      notificationService: getIt<NotificationService>(),
+    ),
+  );
+  getIt.registerLazySingleton<HistoryRepository>(
+    () => HistoryRepositoryImpl(getIt<HistoryDataSource>()),
   );
 
   // Use Cases
@@ -128,6 +162,43 @@ void setupDependencies() {
       auth: getIt<FirebaseAuth>(),
       reduceIngredientsStockUseCase: getIt<ReduceIngredientsStockUseCase>(),
     ),
+  );
+
+  // Notification Use Cases
+  getIt.registerLazySingleton<GetNotificationsUseCase>(
+    () => GetNotificationsUseCase(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerLazySingleton<MarkNotificationAsReadUseCase>(
+    () => MarkNotificationAsReadUseCase(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerLazySingleton<CreateStockWarningNotificationUseCase>(
+    () =>
+        CreateStockWarningNotificationUseCase(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerLazySingleton<WatchNotificationsUseCase>(
+    () => WatchNotificationsUseCase(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerLazySingleton<WatchUnreadCountUseCase>(
+    () => WatchUnreadCountUseCase(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerLazySingleton<ClearReadNotificationsUseCase>(
+    () => ClearReadNotificationsUseCase(getIt<NotificationRepository>()),
+  );
+
+  // History Use Cases
+  getIt.registerLazySingleton<GetTransactionsUseCase>(
+    () => GetTransactionsUseCase(getIt<HistoryRepository>()),
+  );
+  getIt.registerLazySingleton<GetTransactionItemsUseCase>(
+    () => GetTransactionItemsUseCase(getIt<HistoryRepository>()),
+  );
+  getIt.registerLazySingleton<WatchTransactionsUseCase>(
+    () => WatchTransactionsUseCase(getIt<HistoryRepository>()),
   );
 
   // BLoCs
@@ -208,6 +279,28 @@ void setupDependencies() {
     () => CashierBloc(
       checkoutUseCase: getIt<CheckoutUseCase>(),
       getMenusUseCase: getIt<GetMenusUseCase>(),
+      createStockWarningNotificationUseCase:
+          getIt<CreateStockWarningNotificationUseCase>(),
+    ),
+  );
+
+  // Notification BLoCs
+  getIt.registerFactory<NotificationBloc>(
+    () => NotificationBloc(
+      getNotificationsUseCase: getIt<GetNotificationsUseCase>(),
+      markNotificationAsReadUseCase: getIt<MarkNotificationAsReadUseCase>(),
+      watchNotificationsUseCase: getIt<WatchNotificationsUseCase>(),
+      watchUnreadCountUseCase: getIt<WatchUnreadCountUseCase>(),
+      clearReadNotificationsUseCase: getIt<ClearReadNotificationsUseCase>(),
+    ),
+  );
+
+  // History BLoC
+  getIt.registerFactory<HistoryBloc>(
+    () => HistoryBloc(
+      getTransactionsUseCase: getIt<GetTransactionsUseCase>(),
+      getTransactionItemsUseCase: getIt<GetTransactionItemsUseCase>(),
+      watchTransactionsUseCase: getIt<WatchTransactionsUseCase>(),
     ),
   );
 }

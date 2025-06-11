@@ -1,6 +1,4 @@
 // Repository abstrak untuk cashier (domain layer)
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/models/transaction_model.dart';
 import '../../data/models/transaction_item_model.dart';
 
 abstract class CashierRepository {

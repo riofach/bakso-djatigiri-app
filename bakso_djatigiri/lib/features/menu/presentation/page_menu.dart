@@ -38,6 +38,7 @@ class _PageMenuViewState extends State<_PageMenuView> {
     symbol: 'Rp ',
     decimalDigits: 0,
   );
+  bool _isRefreshing = false;
 
   final navBarItems = [
     CustomNavBarItem(
@@ -50,6 +51,39 @@ class _PageMenuViewState extends State<_PageMenuView> {
     CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
     CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
   ];
+
+  // Fungsi untuk refresh menu
+  Future<void> _refreshMenus() async {
+    if (mounted) {
+      setState(() {
+        _isRefreshing = true;
+      });
+
+      try {
+        context.read<MenuBloc>().add(LoadMenusEvent());
+        // Tambahkan delay kecil untuk memberi waktu UI memperbarui
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('Error refreshing menus: $e');
+
+        // Tampilkan snackbar error jika gagal refresh
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memperbarui menu: $e'),
+              backgroundColor: errorColor,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isRefreshing = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -144,106 +178,132 @@ class _PageMenuViewState extends State<_PageMenuView> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: white900,
-                  borderRadius: BorderRadius.circular(360),
-                  border: Border.all(color: gray700),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    context.read<MenuBloc>().add(SearchMenusEvent(value));
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: TextStyle(
-                      color: gray950,
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
+      body: RefreshIndicator(
+        onRefresh: _refreshMenus,
+        color: primary950,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Bar
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: white900,
+                    borderRadius: BorderRadius.circular(360),
+                    border: Border.all(color: gray700),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      context.read<MenuBloc>().add(SearchMenusEvent(value));
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Search',
+                      hintStyle: TextStyle(
+                        color: gray950,
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(Icons.search, color: dark900),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
                     ),
-                    prefixIcon: Icon(Icons.search, color: dark900),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
-            ),
 
-            // List Menu Title
-            const Padding(
-              padding: EdgeInsets.only(left: 16, top: 8, bottom: 8),
-              child: Text(
-                'List Menu',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                  color: dark900,
+              // List Menu Title
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'List Menu',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                        color: dark900,
+                      ),
+                    ),
+                    // Status indikator refresh
+                    if (_isRefreshing)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: Text(
+                          'Memperbarui...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: primary950,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ),
 
-            // Menu Grid
-            Expanded(
-              child: BlocBuilder<MenuBloc, MenuState>(
-                builder: (context, state) {
-                  if (state is MenuLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (state is MenuError) {
-                    return Center(
-                      child: Text(
-                        state.message,
-                        style: const TextStyle(color: errorColor),
-                      ),
-                    );
-                  }
-
-                  if (state is MenuLoaded) {
-                    final menus = state.filteredMenus;
-
-                    if (menus.isEmpty) {
+              // Menu Grid
+              Expanded(
+                child: BlocBuilder<MenuBloc, MenuState>(
+                  builder: (context, state) {
+                    if (state is MenuLoading) {
                       return const Center(
-                        child: Text('Tidak ada menu yang ditemukan'),
+                          child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(primary950),
+                      ));
+                    }
+
+                    if (state is MenuError) {
+                      return Center(
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(color: errorColor),
+                        ),
                       );
                     }
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.builder(
-                        padding: const EdgeInsets.only(bottom: 100),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 11,
-                          crossAxisSpacing: 11,
-                          childAspectRatio: 0.75,
-                        ),
-                        itemCount: menus.length,
-                        itemBuilder: (context, index) {
-                          final menu = menus[index];
-                          return _buildMenuCard(menu);
-                        },
-                      ),
-                    );
-                  }
+                    if (state is MenuLoaded) {
+                      final menus = state.filteredMenus;
 
-                  return const Center(
-                    child: Text('Tidak ada data menu'),
-                  );
-                },
+                      if (menus.isEmpty) {
+                        return const Center(
+                          child: Text('Tidak ada menu yang ditemukan'),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          padding: const EdgeInsets.only(bottom: 100),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 11,
+                            crossAxisSpacing: 11,
+                            childAspectRatio: 0.75,
+                          ),
+                          itemCount: menus.length,
+                          itemBuilder: (context, index) {
+                            final menu = menus[index];
+                            return _buildMenuCard(menu);
+                          },
+                        ),
+                      );
+                    }
+
+                    return const Center(
+                      child: Text('Tidak ada data menu'),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: CustomNavBar(
@@ -305,6 +365,8 @@ class _PageMenuViewState extends State<_PageMenuView> {
                                   ? loadingProgress.cumulativeBytesLoaded /
                                       loadingProgress.expectedTotalBytes!
                                   : null,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  primary950),
                             ),
                           );
                         },
