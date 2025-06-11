@@ -1,4 +1,5 @@
 // Implementasi history repository berdasarkan data source
+// ignore_for_file: unused_import
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/transaction.dart' as entity;
 import '../../domain/entities/transaction_item.dart';

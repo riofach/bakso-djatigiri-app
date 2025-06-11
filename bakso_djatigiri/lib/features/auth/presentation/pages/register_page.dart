@@ -1,4 +1,6 @@
 // Halaman Register
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/color_pallete.dart';

@@ -157,6 +157,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       (transactions) {
         // Menggunakan add karena ini asinkron listener
         if (state is HistoryLoaded) {
+          // ignore: unused_local_variable
           final currentState = state as HistoryLoaded;
           add(FilterTransactionsEvent('')); // Reset filter dan refresh data
         } else {
