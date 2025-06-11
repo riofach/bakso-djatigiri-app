@@ -61,6 +61,16 @@ import '../features/history/domain/usecases/get_transactions_usecase.dart';
 import '../features/history/domain/usecases/get_transaction_items_usecase.dart';
 import '../features/history/domain/usecases/watch_transactions_usecase.dart';
 
+// Import untuk fitur profile
+import '../features/profile/bloc/profile_bloc.dart';
+import '../features/profile/data/datasources/profile_data_source.dart';
+import '../features/profile/data/repositories/profile_repository_impl.dart';
+import '../features/profile/domain/repositories/profile_repository.dart';
+import '../features/profile/domain/usecases/get_current_user_usecase.dart';
+import '../features/profile/domain/usecases/sign_out_usecase.dart';
+import '../features/profile/domain/usecases/get_all_users_usecase.dart';
+import '../features/profile/domain/usecases/update_user_status_usecase.dart';
+
 final GetIt getIt = GetIt.instance;
 
 void setupDependencies() {
@@ -85,6 +95,12 @@ void setupDependencies() {
   getIt.registerLazySingleton<HistoryDataSource>(
     () => HistoryDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
+  getIt.registerLazySingleton<ProfileDataSource>(
+    () => ProfileDataSourceImpl(
+      firestore: getIt<FirebaseFirestore>(),
+      auth: getIt<FirebaseAuth>(),
+    ),
+  );
 
   // Repositories
   getIt.registerLazySingleton<StockRepository>(
@@ -104,6 +120,9 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<HistoryRepository>(
     () => HistoryRepositoryImpl(getIt<HistoryDataSource>()),
+  );
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(getIt<ProfileDataSource>()),
   );
 
   // Use Cases
@@ -199,6 +218,20 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<WatchTransactionsUseCase>(
     () => WatchTransactionsUseCase(getIt<HistoryRepository>()),
+  );
+
+  // Profile Use Cases
+  getIt.registerLazySingleton<GetCurrentUserUseCase>(
+    () => GetCurrentUserUseCase(getIt<ProfileRepository>()),
+  );
+  getIt.registerLazySingleton<SignOutUseCase>(
+    () => SignOutUseCase(getIt<ProfileRepository>()),
+  );
+  getIt.registerLazySingleton<GetAllUsersUseCase>(
+    () => GetAllUsersUseCase(getIt<ProfileRepository>()),
+  );
+  getIt.registerLazySingleton<UpdateUserStatusUseCase>(
+    () => UpdateUserStatusUseCase(getIt<ProfileRepository>()),
   );
 
   // BLoCs
@@ -301,6 +334,16 @@ void setupDependencies() {
       getTransactionsUseCase: getIt<GetTransactionsUseCase>(),
       getTransactionItemsUseCase: getIt<GetTransactionItemsUseCase>(),
       watchTransactionsUseCase: getIt<WatchTransactionsUseCase>(),
+    ),
+  );
+
+  // Profile BLoC
+  getIt.registerFactory<ProfileBloc>(
+    () => ProfileBloc(
+      getCurrentUserUseCase: getIt<GetCurrentUserUseCase>(),
+      signOutUseCase: getIt<SignOutUseCase>(),
+      getAllUsersUseCase: getIt<GetAllUsersUseCase>(),
+      updateUserStatusUseCase: getIt<UpdateUserStatusUseCase>(),
     ),
   );
 }
