@@ -5,9 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
+import '../../../core/services/role_based_navigation_service.dart';
 import '../../../core/animation/page_transitions.dart';
 import '../bloc/profile_bloc.dart';
 import 'manage_users_page.dart';
+import 'package:mie_bakso_djatigiri/features/auth/bloc/auth_bloc.dart';
 
 class PageProfile extends StatelessWidget {
   const PageProfile({super.key});
@@ -29,19 +31,56 @@ class _PageProfileView extends StatefulWidget {
 }
 
 class _PageProfileViewState extends State<_PageProfileView> {
-  final int _selectedIndex = 4; // Profile di index ke-4
+  // ignore: prefer_final_fields
+  int _selectedIndex = 4; // Profile di index ke-4
+  late List<CustomNavBarItem> navBarItems;
+  bool _navBarInitialized = false;
 
-  final navBarItems = [
-    CustomNavBarItem(
-      icon: Icons.bar_chart,
-      label: 'History',
-      route: '/history',
-    ),
-    CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
-    CustomNavBarItem(icon: Icons.description, label: 'Home', route: '/home'),
-    CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
-    CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Tidak perlu inisialisasi yang memerlukan context di sini
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inisialisasi navBarItems di sini karena didChangeDependencies aman untuk menggunakan context
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+  }
+
+  // Inisialisasi item navbar berdasarkan role user
+  void _initNavBarItems() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      navBarItems =
+          RoleBasedNavigationService.getNavBarItemsByRole(authState.role);
+
+      // Gunakan helper method untuk mendapatkan index yang benar
+      final currentRoute = ModalRoute.of(context)?.settings.name ?? '/profile';
+      _selectedIndex = RoleBasedNavigationService.getDefaultSelectedIndex(
+          currentRoute, navBarItems);
+    } else {
+      // Default items jika belum login (seharusnya tidak terjadi)
+      navBarItems = [
+        CustomNavBarItem(
+          icon: Icons.bar_chart,
+          label: 'History',
+          route: '/history',
+        ),
+        CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
+        CustomNavBarItem(
+            icon: Icons.description, label: 'Home', route: '/home'),
+        CustomNavBarItem(
+            icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
+        CustomNavBarItem(
+            icon: Icons.person, label: 'Profile', route: '/profile'),
+      ];
+    }
+  }
 
   // URL default untuk avatar profile dari ShadCDN
   final String _defaultAvatarUrl =
@@ -49,6 +88,12 @@ class _PageProfileViewState extends State<_PageProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    // Pastikan navBarItems sudah diinisialisasi
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -93,6 +138,8 @@ class _PageProfileViewState extends State<_PageProfileView> {
 
           if (state is ProfileLoaded) {
             final user = state.user;
+            final isOwner = user.role.toLowerCase() == 'owner';
+
             return SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
@@ -196,7 +243,7 @@ class _PageProfileViewState extends State<_PageProfileView> {
 
                       // Buttons
                       // Kelola User Button (hanya untuk owner)
-                      if (user.isOwner) ...[
+                      if (isOwner) ...[
                         ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).push(

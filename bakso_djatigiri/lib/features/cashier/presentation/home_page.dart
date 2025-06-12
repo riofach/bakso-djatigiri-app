@@ -5,10 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
+import '../../../core/services/role_based_navigation_service.dart';
 import '../../menu/domain/entities/menu_entity.dart';
 import '../bloc/cashier_bloc.dart';
 import '../bloc/notification_bloc.dart';
 import '../presentation/cart.dart';
+import 'package:mie_bakso_djatigiri/features/auth/bloc/auth_bloc.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -27,7 +29,7 @@ class _HomePageView extends StatefulWidget {
 }
 
 class _HomePageViewState extends State<_HomePageView> {
-  final int _selectedIndex = 2; // Home di index ke-2
+  int _selectedIndex = 2; // Home di index ke-2
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'id',
@@ -35,28 +37,59 @@ class _HomePageViewState extends State<_HomePageView> {
     decimalDigits: 0,
   );
   bool _isRefreshing = false;
-
-  final navBarItems = [
-    CustomNavBarItem(
-      icon: Icons.bar_chart,
-      label: 'History',
-      route: '/history',
-    ),
-    CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
-    CustomNavBarItem(icon: Icons.home, label: 'Home', route: '/home'),
-    CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
-    CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
-  ];
+  late List<CustomNavBarItem> navBarItems;
+  bool _navBarInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    // Hanya inisialisasi variabel yang tidak memerlukan context
+
     // Reload menu saat halaman dibuka untuk mendapatkan stok terbaru
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _refreshMenus();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inisialisasi navBarItems di sini karena didChangeDependencies aman untuk menggunakan context
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+  }
+
+  // Inisialisasi item navbar berdasarkan role user
+  void _initNavBarItems() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      navBarItems =
+          RoleBasedNavigationService.getNavBarItemsByRole(authState.role);
+
+      // Gunakan helper method untuk mendapatkan index yang benar
+      final currentRoute = ModalRoute.of(context)?.settings.name ?? '/home';
+      _selectedIndex = RoleBasedNavigationService.getDefaultSelectedIndex(
+          currentRoute, navBarItems);
+    } else {
+      // Default items jika belum login (seharusnya tidak terjadi)
+      navBarItems = [
+        CustomNavBarItem(
+          icon: Icons.bar_chart,
+          label: 'History',
+          route: '/history',
+        ),
+        CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
+        CustomNavBarItem(icon: Icons.home, label: 'Home', route: '/home'),
+        CustomNavBarItem(
+            icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
+        CustomNavBarItem(
+            icon: Icons.person, label: 'Profile', route: '/profile'),
+      ];
+    }
   }
 
   // Fungsi untuk refresh menu
@@ -101,6 +134,12 @@ class _HomePageViewState extends State<_HomePageView> {
 
   @override
   Widget build(BuildContext context) {
+    // Pastikan navBarItems sudah diinisialisasi
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(

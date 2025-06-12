@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mie_bakso_djatigiri/config/supabase_storage.dart';
+import 'package:mie_bakso_djatigiri/core/navigation/route_guard.dart';
 import 'package:mie_bakso_djatigiri/core/services/notification_service.dart';
 import 'package:mie_bakso_djatigiri/di/injection.dart';
 import 'config/firebase_options.dart';
@@ -22,7 +23,9 @@ import 'features/profile/presentation/page_profile.dart';
 import 'features/cashier/bloc/cashier_bloc.dart';
 import 'features/cashier/bloc/notification_bloc.dart';
 import 'features/cashier/presentation/notification.dart';
+import 'features/splash/presentation/splash_screen.dart';
 import 'package:get_it/get_it.dart';
+import 'core/animation/page_transitions.dart';
 
 // Komentar: Pastikan Firebase diinisialisasi sebelum runApp
 void main() async {
@@ -67,18 +70,54 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Bakso Djatigiri',
-        theme: ThemeData(primarySwatch: Colors.blue),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const AuthWrapper(),
-          '/login': (context) => const LoginPage(),
-          '/stock': (context) => const PageStock(),
-          '/register': (context) => const RegisterPage(),
-          '/home': (context) => const HomePage(),
-          '/menu': (context) => const PageMenu(),
-          '/history': (context) => const PageHistory(),
-          '/profile': (context) => const PageProfile(),
-          '/notification': (context) => const NotificationPage(),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          fontFamily: 'Poppins', // Menggunakan font Poppins sebagai default
+        ),
+        // Menggunakan home property untuk halaman awal aplikasi (splash screen)
+        home: const SplashScreen(),
+
+        // Menggunakan onGenerateRoute untuk memberikan transisi kustom pada navigasi
+        // dan menerapkan role-based access control
+        onGenerateRoute: (settings) {
+          // Fungsi untuk mendapatkan halaman berdasarkan route name
+          Widget getPageForRoute(String routeName) {
+            switch (routeName) {
+              case '/auth':
+                return const AuthWrapper();
+              case '/login':
+                return const LoginPage();
+              case '/stock':
+                return const PageStock();
+              case '/register':
+                return const RegisterPage();
+              case '/home':
+                return const HomePage();
+              case '/menu':
+                return const PageMenu();
+              case '/history':
+                return const PageHistory();
+              case '/profile':
+                return const PageProfile();
+              case '/notification':
+                return const NotificationPage();
+              default:
+                return const HomePage(); // Default fallback
+            }
+          }
+
+          // Route untuk halaman autentikasi tidak perlu role check
+          if (settings.name == '/auth' ||
+              settings.name == '/login' ||
+              settings.name == '/register' ||
+              settings.name == '/') {
+            return FadeInOutPageRoute(
+                page: getPageForRoute(settings.name ?? '/auth'));
+          }
+
+          // Gunakan RouteGuard untuk route yang memerlukan autentikasi dan role check
+          return RouteGuard.onGenerateRoute(
+              settings, (routeName) => getPageForRoute(routeName));
         },
       ),
     );
