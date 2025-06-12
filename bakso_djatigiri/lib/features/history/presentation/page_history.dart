@@ -5,10 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
+import '../../../core/services/role_based_navigation_service.dart';
 import '../../../core/animation/page_transitions.dart';
 import '../bloc/history_bloc.dart';
 import 'transaction_detail_page.dart';
 import 'package:get_it/get_it.dart';
+import 'package:mie_bakso_djatigiri/features/auth/bloc/auth_bloc.dart';
 
 class PageHistory extends StatelessWidget {
   const PageHistory({super.key});
@@ -31,7 +33,7 @@ class _PageHistoryView extends StatefulWidget {
 }
 
 class _PageHistoryViewState extends State<_PageHistoryView> {
-  final int _selectedIndex = 0; // History di index ke-0
+  int _selectedIndex = 0; // History di index ke-0
   final TextEditingController _searchController = TextEditingController();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'id',
@@ -39,18 +41,51 @@ class _PageHistoryViewState extends State<_PageHistoryView> {
     decimalDigits: 0,
   );
   bool _isRefreshing = false;
+  late List<CustomNavBarItem> navBarItems;
+  bool _navBarInitialized = false;
 
-  final navBarItems = [
-    CustomNavBarItem(
-      icon: Icons.bar_chart,
-      label: 'History',
-      route: '/history',
-    ),
-    CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
-    CustomNavBarItem(icon: Icons.description, label: 'Home', route: '/home'),
-    CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
-    CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+  }
+
+  // Inisialisasi item navbar berdasarkan role user
+  void _initNavBarItems() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      navBarItems =
+          RoleBasedNavigationService.getNavBarItemsByRole(authState.role);
+
+      final currentRoute = ModalRoute.of(context)?.settings.name ?? '/history';
+      _selectedIndex = RoleBasedNavigationService.getDefaultSelectedIndex(
+          currentRoute, navBarItems);
+    } else {
+      // Default items jika belum login (seharusnya tidak terjadi)
+      navBarItems = [
+        CustomNavBarItem(
+          icon: Icons.bar_chart,
+          label: 'History',
+          route: '/history',
+        ),
+        CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
+        CustomNavBarItem(
+            icon: Icons.description, label: 'Home', route: '/home'),
+        CustomNavBarItem(
+            icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
+        CustomNavBarItem(
+            icon: Icons.person, label: 'Profile', route: '/profile'),
+      ];
+    }
+  }
 
   // Fungsi untuk refresh transaksi
   Future<void> _refreshTransactions() async {
@@ -103,6 +138,12 @@ class _PageHistoryViewState extends State<_PageHistoryView> {
 
   @override
   Widget build(BuildContext context) {
+    // Pastikan navBarItems sudah diinisialisasi
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(

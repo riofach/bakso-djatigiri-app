@@ -1,11 +1,11 @@
-// Splash screen untuk aplikasi Bakso Djatigiri
-// Menampilkan logo dengan animasi fade dan gradient background
-import 'dart:async';
+// Splash Screen untuk aplikasi Bakso Djatigiri
+// Menampilkan logo dan nama aplikasi saat startup
+
 import 'package:flutter/material.dart';
-import 'package:mie_bakso_djatigiri/core/theme/color_pallete.dart';
-import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
-// Tidak perlu mengimport AuthWrapper karena kita akan menggunakan named route
-// import 'package:mie_bakso_djatigiri/features/auth/presentation/pages/auth_wrapper.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/theme/color_pallete.dart';
+import '../../../features/auth/bloc/auth_bloc.dart';
+import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,19 +16,16 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // Animator untuk efek fade in dan scaling
+  // Animator untuk efek fade in logo
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-
-  // Flag untuk mencegah navigasi berulang
-  bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Setup animasi
+    // Setup animasi fade in dan scale untuk logo
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -37,35 +34,25 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeInOut),
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeInOut),
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutBack),
       ),
     );
 
-    // Jalankan animasi
+    // Mulai animasi
     _animationController.forward();
 
-    // Navigasi ke halaman auth setelah selesai splash screen
-    Timer(
-      const Duration(seconds: 3),
-      () {
-        // Cek flag untuk mencegah navigasi berulang
-        if (!_isNavigating && mounted) {
-          setState(() {
-            _isNavigating = true;
-          });
-
-          // Menggunakan named route untuk navigasi ke halaman auth
-          Navigator.of(context).pushReplacementNamed('/auth');
-        }
-      },
-    );
+    // Delay sebelum navigasi ke halaman berikutnya
+    Timer(const Duration(seconds: 3), () {
+      // Trigger pengecekan user saat startup
+      context.read<AuthBloc>().add(CheckCurrentUserEvent());
+    });
   }
 
   @override
@@ -76,98 +63,112 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Dapatkan ukuran layar untuk layout yang responsive
-    final Size screenSize = MediaQuery.of(context).size;
-    final double logoSize =
-        screenSize.width * 0.5 > 200 ? 200 : screenSize.width * 0.5;
-
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: diagonal01, // Gradient dari color_pallete.dart
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: _fadeAnimation,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo dengan error handling dan nama file tanpa spasi
-                      Image.asset(
-                        'assets/images/logo_bakso_djatigiri.png',
-                        width: logoSize,
-                        height: logoSize,
-                        errorBuilder: (context, error, stackTrace) {
-                          debugPrint('Error loading logo: $error');
-                          // Coba alternatif nama file jika yang pertama gagal
-                          return Image.asset(
-                            'assets/images/logo BD 1.png',
-                            width: logoSize,
-                            height: logoSize,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is Authenticated) {
+          // Navigasi ke home jika sudah login
+          Navigator.of(context).pushReplacementNamed('/home');
+        } else if (state is Unauthenticated) {
+          // Navigasi ke login jika belum login
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      },
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: diagonal01, // Gradient dari color_pallete.dart
+          ),
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo aplikasi
+                        Container(
+                          width: 180,
+                          height: 180,
+                          // decoration: BoxDecoration(
+                          //   shape: BoxShape.circle,
+                          //   color: white900.withOpacity(0.9),
+                          //   boxShadow: [
+                          //     BoxShadow(
+                          //       color: Colors.black.withOpacity(0.1),
+                          //       blurRadius: 20,
+                          //       offset: const Offset(0, 10),
+                          //     ),
+                          //   ],
+                          // ),
+                          padding: const EdgeInsets.all(20),
+                          child: Image.asset(
+                            'assets/images/logo_bakso_djatigiri.png',
                             errorBuilder: (context, error, stackTrace) {
-                              debugPrint(
-                                  'Error loading alternative logo: $error');
-                              // Fallback jika kedua gambar tidak dapat dimuat
-                              return Container(
-                                width: logoSize,
-                                height: logoSize,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.restaurant,
-                                  size: 80,
-                                  color: white900,
-                                ),
+                              return const Icon(
+                                Icons.restaurant,
+                                size: 100,
+                                color: primary950,
                               );
                             },
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Nama aplikasi
-                      const Text(
-                        'Bakso Djatigiri',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: white900,
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 32),
 
-                      // Tagline
-                      const Text(
-                        'Nikmat - Hangat - Terjangkau',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: white900,
+                        // Nama aplikasi
+                        const Text(
+                          'Bakso Djatigiri',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: white900,
+                            fontFamily: 'Poppins',
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 5,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      // Indikator loading
-                      const SizedBox(height: 40),
-                      const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(white900),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+
+                        // Tagline
+                        Text(
+                          'Sistem Kasir & Manajemen Stok',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: white900.withOpacity(0.9),
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+
+                        const SizedBox(height: 48),
+
+                        // Loading indicator
+                        SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(white900),
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),

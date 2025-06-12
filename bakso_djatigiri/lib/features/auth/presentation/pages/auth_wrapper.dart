@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../bloc/auth_bloc.dart';
 import '../../../../core/theme/color_pallete.dart';
 import '../../../../core/animation/page_transitions.dart';
+import '../../../../core/services/role_based_navigation_service.dart';
 import '../pages/login_page.dart';
 
 class AuthWrapper extends StatefulWidget {
@@ -113,8 +114,11 @@ class _AuthWrapperState extends State<AuthWrapper>
           ));
         }
         if (state is Authenticated) {
-          // Navigasi ke home dengan transisi fade
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Navigasi ke home dengan transisi fade berdasarkan role user
+          // Untuk role kasir, pastikan hanya bisa akses halaman yang diizinkan
+          final fallbackRoute =
+              RoleBasedNavigationService.getFallbackRoute(state.role);
+          Navigator.of(context).pushReplacementNamed(fallbackRoute);
         } else if (state is Unauthenticated) {
           // Navigasi ke login dengan transisi fade
           Navigator.of(context)

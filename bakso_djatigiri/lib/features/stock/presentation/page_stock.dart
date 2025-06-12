@@ -6,9 +6,11 @@ import 'package:get_it/get_it.dart';
 import 'package:mie_bakso_djatigiri/core/animation/page_transitions.dart';
 import '../../../core/theme/color_pallete.dart';
 import '../../../core/widgets/custom_navbar.dart';
+import '../../../core/services/role_based_navigation_service.dart';
 import '../bloc/stock_bloc.dart';
 import 'create_stock.dart';
 import 'edit_stock.dart';
+import 'package:mie_bakso_djatigiri/features/auth/bloc/auth_bloc.dart';
 
 class PageStock extends StatelessWidget {
   const PageStock({super.key});
@@ -33,18 +35,54 @@ class _PageStockViewState extends State<_PageStockView> {
   // ignore: prefer_final_fields
   int _selectedIndex = 3; // Stock di index ke-3
   bool _isRefreshing = false;
+  late List<CustomNavBarItem> navBarItems;
+  bool _navBarInitialized = false;
 
-  final navBarItems = [
-    CustomNavBarItem(
-      icon: Icons.bar_chart,
-      label: 'History',
-      route: '/history',
-    ),
-    CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
-    CustomNavBarItem(icon: Icons.description, label: 'Home', route: '/home'),
-    CustomNavBarItem(icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
-    CustomNavBarItem(icon: Icons.person, label: 'Profile', route: '/profile'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Tidak perlu inisialisasi yang memerlukan context di sini
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inisialisasi navBarItems di sini karena didChangeDependencies aman untuk menggunakan context
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+  }
+
+  // Inisialisasi item navbar berdasarkan role user
+  void _initNavBarItems() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      navBarItems =
+          RoleBasedNavigationService.getNavBarItemsByRole(authState.role);
+
+      // Gunakan helper method untuk mendapatkan index yang benar
+      final currentRoute = ModalRoute.of(context)?.settings.name ?? '/stock';
+      _selectedIndex = RoleBasedNavigationService.getDefaultSelectedIndex(
+          currentRoute, navBarItems);
+    } else {
+      // Default items jika belum login (seharusnya tidak terjadi)
+      navBarItems = [
+        CustomNavBarItem(
+          icon: Icons.bar_chart,
+          label: 'History',
+          route: '/history',
+        ),
+        CustomNavBarItem(icon: Icons.menu_book, label: 'Menu', route: '/menu'),
+        CustomNavBarItem(
+            icon: Icons.description, label: 'Home', route: '/home'),
+        CustomNavBarItem(
+            icon: Icons.shopping_bag, label: 'Stock', route: '/stock'),
+        CustomNavBarItem(
+            icon: Icons.person, label: 'Profile', route: '/profile'),
+      ];
+    }
+  }
 
   // Fungsi untuk refresh stok
   Future<void> _refreshStocks() async {
@@ -81,6 +119,12 @@ class _PageStockViewState extends State<_PageStockView> {
 
   @override
   Widget build(BuildContext context) {
+    // Pastikan navBarItems sudah diinisialisasi
+    if (!_navBarInitialized) {
+      _initNavBarItems();
+      _navBarInitialized = true;
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(

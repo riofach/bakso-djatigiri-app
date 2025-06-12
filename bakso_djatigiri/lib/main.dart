@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mie_bakso_djatigiri/config/supabase_storage.dart';
+import 'package:mie_bakso_djatigiri/core/navigation/route_guard.dart';
 import 'package:mie_bakso_djatigiri/core/services/notification_service.dart';
 import 'package:mie_bakso_djatigiri/di/injection.dart';
 import 'config/firebase_options.dart';
@@ -77,44 +78,46 @@ class MyApp extends StatelessWidget {
         home: const SplashScreen(),
 
         // Menggunakan onGenerateRoute untuk memberikan transisi kustom pada navigasi
+        // dan menerapkan role-based access control
         onGenerateRoute: (settings) {
-          // Mendefinisikan handler untuk setiap named route
-          Widget page;
-
-          switch (settings.name) {
-            case '/auth':
-              page = const AuthWrapper();
-              break;
-            case '/login':
-              page = const LoginPage();
-              break;
-            case '/stock':
-              page = const PageStock();
-              break;
-            case '/register':
-              page = const RegisterPage();
-              break;
-            case '/home':
-              page = const HomePage();
-              break;
-            case '/menu':
-              page = const PageMenu();
-              break;
-            case '/history':
-              page = const PageHistory();
-              break;
-            case '/profile':
-              page = const PageProfile();
-              break;
-            case '/notification':
-              page = const NotificationPage();
-              break;
-            default:
-              return null; // Route tidak ditemukan
+          // Fungsi untuk mendapatkan halaman berdasarkan route name
+          Widget getPageForRoute(String routeName) {
+            switch (routeName) {
+              case '/auth':
+                return const AuthWrapper();
+              case '/login':
+                return const LoginPage();
+              case '/stock':
+                return const PageStock();
+              case '/register':
+                return const RegisterPage();
+              case '/home':
+                return const HomePage();
+              case '/menu':
+                return const PageMenu();
+              case '/history':
+                return const PageHistory();
+              case '/profile':
+                return const PageProfile();
+              case '/notification':
+                return const NotificationPage();
+              default:
+                return const HomePage(); // Default fallback
+            }
           }
 
-          // Menggunakan transisi FadeInOutPageRoute untuk semua navigasi
-          return FadeInOutPageRoute(page: page);
+          // Route untuk halaman autentikasi tidak perlu role check
+          if (settings.name == '/auth' ||
+              settings.name == '/login' ||
+              settings.name == '/register' ||
+              settings.name == '/') {
+            return FadeInOutPageRoute(
+                page: getPageForRoute(settings.name ?? '/auth'));
+          }
+
+          // Gunakan RouteGuard untuk route yang memerlukan autentikasi dan role check
+          return RouteGuard.onGenerateRoute(
+              settings, (routeName) => getPageForRoute(routeName));
         },
       ),
     );
