@@ -27,6 +27,8 @@ lib/
 │   ├── utils/                  # Utility functions
 │   └── widgets/                # Widget yang dapat digunakan kembali
 └── features/                   # Fitur-fitur aplikasi
+    ├── splash/                 # Fitur splash screen
+    │   └── presentation/       # UI layer (splash screen)
     ├── auth/                   # Fitur autentikasi
     │   ├── bloc/               # State management untuk auth
     │   ├── data/               # Data layer (model, repository impl, data source)
@@ -95,6 +97,13 @@ Layer ini berisi UI dan state management.
 5. **Framework Independence**: Domain layer tidak bergantung pada framework eksternal.
 
 ## Fitur Aplikasi
+
+### Splash Screen
+
+- Tampilan pembuka dengan logo dan nama aplikasi
+- Menggunakan animasi fade dan scaling
+- Background dengan gradient menarik sesuai tema aplikasi
+- Otomatis berpindah ke halaman autentikasi setelah 3 detik
 
 ### Autentikasi
 

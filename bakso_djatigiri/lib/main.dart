@@ -22,7 +22,9 @@ import 'features/profile/presentation/page_profile.dart';
 import 'features/cashier/bloc/cashier_bloc.dart';
 import 'features/cashier/bloc/notification_bloc.dart';
 import 'features/cashier/presentation/notification.dart';
+import 'features/splash/presentation/splash_screen.dart';
 import 'package:get_it/get_it.dart';
+import 'core/animation/page_transitions.dart';
 
 // Komentar: Pastikan Firebase diinisialisasi sebelum runApp
 void main() async {
@@ -67,18 +69,52 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Bakso Djatigiri',
-        theme: ThemeData(primarySwatch: Colors.blue),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const AuthWrapper(),
-          '/login': (context) => const LoginPage(),
-          '/stock': (context) => const PageStock(),
-          '/register': (context) => const RegisterPage(),
-          '/home': (context) => const HomePage(),
-          '/menu': (context) => const PageMenu(),
-          '/history': (context) => const PageHistory(),
-          '/profile': (context) => const PageProfile(),
-          '/notification': (context) => const NotificationPage(),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          fontFamily: 'Poppins', // Menggunakan font Poppins sebagai default
+        ),
+        // Menggunakan home property untuk halaman awal aplikasi (splash screen)
+        home: const SplashScreen(),
+
+        // Menggunakan onGenerateRoute untuk memberikan transisi kustom pada navigasi
+        onGenerateRoute: (settings) {
+          // Mendefinisikan handler untuk setiap named route
+          Widget page;
+
+          switch (settings.name) {
+            case '/auth':
+              page = const AuthWrapper();
+              break;
+            case '/login':
+              page = const LoginPage();
+              break;
+            case '/stock':
+              page = const PageStock();
+              break;
+            case '/register':
+              page = const RegisterPage();
+              break;
+            case '/home':
+              page = const HomePage();
+              break;
+            case '/menu':
+              page = const PageMenu();
+              break;
+            case '/history':
+              page = const PageHistory();
+              break;
+            case '/profile':
+              page = const PageProfile();
+              break;
+            case '/notification':
+              page = const NotificationPage();
+              break;
+            default:
+              return null; // Route tidak ditemukan
+          }
+
+          // Menggunakan transisi FadeInOutPageRoute untuk semua navigasi
+          return FadeInOutPageRoute(page: page);
         },
       ),
     );
