@@ -10,6 +10,7 @@ class RoleBasedNavigationService {
     '/home', // Halaman kasir
     '/history', // Riwayat transaksi
     '/profile', // Profil user
+    '/notification', // Halaman notifikasi
   ];
 
   // Mendapatkan item navbar berdasarkan role
