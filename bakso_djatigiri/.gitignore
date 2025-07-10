@@ -85,3 +85,5 @@ lib/firebase_options.dart
 *.g.dart
 *.freezed.dart
 lib/di/injection.config.dart
+
+android/app/google-services.json
