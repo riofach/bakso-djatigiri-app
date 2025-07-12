@@ -36,8 +36,8 @@ Pastikan Flutter SDK versi 3.x.x atau yang lebih baru sudah terpasang di mesin A
 1.  **Clone Repositori**
 
     ```bash
-    git clone -b team404 [https://github.com/ariebhewhe/globalSabtuGenap2425/](https://github.com/ariebhewhe/globalSabtuGenap2425/)
-    cd globalSabtuGenap2425
+    git clone https://github.com/riofach/bakso-djatigiri-app.git
+    cd bakso-djatigiri-app
     ```
 
 2.  **Konfigurasi Firebase**
