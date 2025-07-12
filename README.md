@@ -36,7 +36,7 @@ Pastikan Flutter SDK versi 3.x.x atau yang lebih baru sudah terpasang di mesin A
 1.  **Clone Repositori**
 
     ```bash
-    git clone https://github.com/riofach/bakso-djatigiri-app.git
+    git clone [https://github.com/riofach/bakso-djatigiri-app.git](https://github.com/riofach/bakso-djatigiri-app.git)
     cd bakso-djatigiri-app
     ```
 
@@ -60,6 +60,12 @@ Pastikan Flutter SDK versi 3.x.x atau yang lebih baru sudah terpasang di mesin A
 
     ```bash
     flutter run
+    ```
+
+4.  **Release Aplikasi**
+
+    ```bash
+    flutter build apk
     ```
 
 ---
